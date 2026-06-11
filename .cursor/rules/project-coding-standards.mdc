@@ -1,0 +1,15 @@
+---
+description: Core coding standards for scalable Next.js development
+alwaysApply: true
+---
+
+# Project Coding Standards
+
+- Follow SOLID principles: keep modules focused, depend on abstractions where useful, and avoid mixing data, UI, and orchestration in one file.
+- Keep files under 500 lines. Split large components into smaller components, hooks, services, or data modules before the limit is reached.
+- Prefer clean, readable TypeScript with explicit domain types for shared data and public component props.
+- Build reusable UI with small components that accept clear props and avoid hidden side effects.
+- Keep business rules outside page components. Pages should compose features; feature folders should own domain data and behavior.
+- Favor maintainable code over clever code: descriptive names, simple control flow, and minimal duplication.
+- Use Next.js best practices: App Router, server components by default, semantic HTML, accessible labels, and optimized assets.
+- Validate changes with lint/build checks when implementation changes are made.
