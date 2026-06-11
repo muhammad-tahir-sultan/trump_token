@@ -85,5 +85,7 @@ export async function getCurrentUser() {
     id: decodedPayload.id,
     name: decodedPayload.name,
     email: decodedPayload.email,
+    referralCode: decodedPayload.referralCode,
+    role: decodedPayload.role,
   };
 }

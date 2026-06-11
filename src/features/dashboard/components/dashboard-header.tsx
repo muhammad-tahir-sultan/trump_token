@@ -19,9 +19,14 @@ export function DashboardHeader({ user }: DashboardHeaderProps) {
     <header className="flex flex-col gap-4 border-b border-slate-200/80 bg-white px-5 py-5 sm:px-8 lg:flex-row lg:items-center lg:justify-between">
       <div>
         <p className="text-sm font-semibold text-slate-400">Hello, {user.name}</p>
-        <h2 className="text-2xl font-black tracking-tight text-slate-950">
-          Level Commission Dashboard
-        </h2>
+        <div className="mt-1 flex flex-col gap-2 sm:flex-row sm:items-center">
+          <h2 className="text-2xl font-black tracking-tight text-slate-950">
+            Level Commission Dashboard
+          </h2>
+          <span className="w-fit rounded-full bg-indigo-50 px-3 py-1 text-xs font-black text-indigo-700">
+            Referral: {user.referralCode}
+          </span>
+        </div>
       </div>
 
       <div className="flex items-center gap-3">

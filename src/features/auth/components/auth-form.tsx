@@ -94,6 +94,29 @@ export function AuthForm({
           />
         </div>
 
+        {mode === "signup" ? (
+          <div>
+            <label
+              className="text-sm font-bold text-slate-700"
+              htmlFor="referralCode"
+            >
+              Referral code
+            </label>
+            <input
+              autoComplete="off"
+              className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold uppercase outline-none transition placeholder:normal-case focus:border-indigo-400 focus:bg-white focus:ring-4 focus:ring-indigo-100"
+              id="referralCode"
+              name="referralCode"
+              placeholder="Enter sponsor referral code"
+              required
+              type="text"
+            />
+            <p className="mt-2 text-xs font-semibold text-slate-400">
+              New users must enter an existing referral code to join.
+            </p>
+          </div>
+        ) : null}
+
         <button
           className="w-full rounded-2xl bg-indigo-600 px-5 py-3.5 text-sm font-black text-white shadow-lg shadow-indigo-200 transition hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-200"
           type="submit"

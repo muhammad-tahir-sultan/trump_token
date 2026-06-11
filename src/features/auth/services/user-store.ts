@@ -1,4 +1,4 @@
-import { randomUUID } from "crypto";
+import { randomBytes, randomUUID } from "crypto";
 import { MongoServerError, type Collection } from "mongodb";
 import type { SignupInput, StoredUser } from "@/features/auth/types/auth";
 import { getMongoDatabase } from "@/features/auth/services/mongodb-client";
@@ -9,6 +9,9 @@ type UserDocument = {
   name: string;
   email: string;
   passwordHash: string;
+  referralCode: string;
+  referredByUserId: string | null;
+  role: "admin" | "user";
   createdAt: Date;
   updatedAt: Date;
 };
@@ -22,12 +25,21 @@ export class DuplicateUserEmailError extends Error {
   }
 }
 
+export class InvalidReferralCodeError extends Error {
+  constructor() {
+    super("Referral code is invalid.");
+    this.name = "InvalidReferralCodeError";
+  }
+}
+
 async function getUsersCollection() {
   if (!usersCollectionPromise) {
     usersCollectionPromise = getMongoDatabase().then(async (database) => {
       const collection = database.collection<UserDocument>("users");
 
       await collection.createIndex({ email: 1 }, { unique: true });
+      await collection.createIndex({ referralCode: 1 }, { unique: true });
+      await collection.createIndex({ referredByUserId: 1 });
 
       return collection;
     });
@@ -42,7 +54,22 @@ function toStoredUser(document: UserDocument): StoredUser {
     name: document.name,
     email: document.email,
     passwordHash: document.passwordHash,
+    referralCode: document.referralCode,
+    referredByUserId: document.referredByUserId,
+    role: document.role,
   };
+}
+
+function createReferralCode() {
+  return `RH-${randomBytes(4).toString("hex").toUpperCase()}`;
+}
+
+function isDuplicateEmailError(error: MongoServerError) {
+  return error.code === 11000 && "email" in (error.keyPattern ?? {});
+}
+
+function isDuplicateReferralCodeError(error: MongoServerError) {
+  return error.code === 11000 && "referralCode" in (error.keyPattern ?? {});
 }
 
 export async function findUserByEmail(email: string) {
@@ -52,27 +79,56 @@ export async function findUserByEmail(email: string) {
   return user ? toStoredUser(user) : null;
 }
 
+export async function findUserByReferralCode(referralCode: string) {
+  const usersCollection = await getUsersCollection();
+  const user = await usersCollection.findOne({ referralCode });
+
+  return user ? toStoredUser(user) : null;
+}
+
 export async function createUser(input: SignupInput) {
   const usersCollection = await getUsersCollection();
+  const referrer = await findUserByReferralCode(input.referralCode);
+
+  if (!referrer) {
+    throw new InvalidReferralCodeError();
+  }
+
   const now = new Date();
   const userDocument: UserDocument = {
     id: randomUUID(),
     name: input.name,
     email: input.email,
     passwordHash: hashPassword(input.password),
+    referralCode: createReferralCode(),
+    referredByUserId: referrer.id,
+    role: "user",
     createdAt: now,
     updatedAt: now,
   };
 
-  try {
-    await usersCollection.insertOne(userDocument);
-  } catch (error) {
-    if (error instanceof MongoServerError && error.code === 11000) {
-      throw new DuplicateUserEmailError();
-    }
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const documentToInsert = {
+      ...userDocument,
+      referralCode: attempt === 0 ? userDocument.referralCode : createReferralCode(),
+    };
 
-    throw error;
+    try {
+      await usersCollection.insertOne(documentToInsert);
+
+      return toStoredUser(documentToInsert);
+    } catch (error) {
+      if (error instanceof MongoServerError && isDuplicateEmailError(error)) {
+        throw new DuplicateUserEmailError();
+      }
+
+      if (error instanceof MongoServerError && isDuplicateReferralCodeError(error)) {
+        continue;
+      }
+
+      throw error;
+    }
   }
 
-  return toStoredUser(userDocument);
+  throw new Error("Could not create a unique referral code. Please try again.");
 }

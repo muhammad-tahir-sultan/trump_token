@@ -1,7 +1,5 @@
 import { MongoClient } from "mongodb";
 
-const defaultDatabaseName = "level_reward_hub";
-
 const globalMongo = globalThis as typeof globalThis & {
   mongoClientPromise?: Promise<MongoClient>;
 };
@@ -13,7 +11,7 @@ function getMongoUri() {
     throw new Error("MONGODB_URI is required to connect auth to MongoDB.");
   }
 
-  return uri;
+  return uri.replace(/^MONGODB_URI=/, "");
 }
 
 export async function getMongoDatabase() {
@@ -24,5 +22,5 @@ export async function getMongoDatabase() {
 
   const client = await globalMongo.mongoClientPromise;
 
-  return client.db(process.env.MONGODB_DB ?? defaultDatabaseName);
+  return process.env.MONGODB_DB ? client.db(process.env.MONGODB_DB) : client.db();
 }

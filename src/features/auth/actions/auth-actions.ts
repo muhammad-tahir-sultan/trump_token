@@ -17,6 +17,7 @@ import {
   createUser,
   DuplicateUserEmailError,
   findUserByEmail,
+  InvalidReferralCodeError,
 } from "@/features/auth/services/user-store";
 
 function getErrorPath(path: "/login" | "/signup", message: string) {
@@ -48,6 +49,10 @@ export async function signupAction(formData: FormData) {
       redirect(getErrorPath("/signup", error.message));
     }
 
+    if (error instanceof InvalidReferralCodeError) {
+      redirect(getErrorPath("/signup", error.message));
+    }
+
     throw error;
   }
 
@@ -55,6 +60,8 @@ export async function signupAction(formData: FormData) {
     id: user.id,
     name: user.name,
     email: user.email,
+    referralCode: user.referralCode,
+    role: user.role,
   });
 
   redirect("/");
@@ -81,6 +88,8 @@ export async function loginAction(formData: FormData) {
     id: user.id,
     name: user.name,
     email: user.email,
+    referralCode: user.referralCode,
+    role: user.role,
   });
 
   redirect("/");
