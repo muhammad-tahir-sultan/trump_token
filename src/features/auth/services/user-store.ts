@@ -12,6 +12,10 @@ type UserDocument = {
   referralCode: string;
   referredByUserId: string | null;
   role: "admin" | "user";
+  balanceCents?: number;
+  totalDepositedCents?: number;
+  totalWithdrawnCents?: number;
+  transactions?: unknown[];
   createdAt: Date;
   updatedAt: Date;
 };
@@ -103,6 +107,10 @@ export async function createUser(input: SignupInput) {
     referralCode: createReferralCode(),
     referredByUserId: referrer.id,
     role: "user",
+    balanceCents: 0,
+    totalDepositedCents: 0,
+    totalWithdrawnCents: 0,
+    transactions: [],
     createdAt: now,
     updatedAt: now,
   };

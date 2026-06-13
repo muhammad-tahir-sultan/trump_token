@@ -22,15 +22,15 @@ export function DashboardHero({ level }: DashboardHeroProps) {
         <div className="mt-8 flex flex-wrap gap-3">
           <a
             className="rounded-2xl bg-white px-5 py-3 text-sm font-black text-slate-950 transition hover:bg-indigo-50"
-            href="#levels"
+            href="/deposit"
           >
-            Explore Levels
+            Deposit Now
           </a>
           <a
             className="rounded-2xl border border-white/20 px-5 py-3 text-sm font-black text-white transition hover:bg-white/10"
-            href="#summary"
+            href="/history"
           >
-            View Summary
+            View History
           </a>
         </div>
       </div>

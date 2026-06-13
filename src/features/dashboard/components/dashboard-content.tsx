@@ -5,30 +5,33 @@ import { DashboardHeader } from "@/features/dashboard/components/dashboard-heade
 import { LevelGrid } from "@/features/dashboard/components/level-grid";
 import type { AuthenticatedUser } from "@/features/auth/types/auth";
 import { featuredLevel, levels } from "@/features/levels/data/levels";
-
-const summaryStats = [
-  {
-    label: "Starter Deposit",
-    value: "$10",
-    trend: "L1",
-  },
-  {
-    label: "Max Daily Rate",
-    value: "12%",
-    trend: "L5",
-  },
-  {
-    label: "Total Levels",
-    value: "5",
-    trend: "Live",
-  },
-];
+import { formatCurrency } from "@/features/wallet/services/currency";
+import type { WalletSummary } from "@/features/wallet/types/wallet";
 
 type DashboardContentProps = {
   user: AuthenticatedUser;
+  wallet: WalletSummary;
 };
 
-export function DashboardContent({ user }: DashboardContentProps) {
+export function DashboardContent({ user, wallet }: DashboardContentProps) {
+  const summaryStats = [
+    {
+      label: "Wallet Balance",
+      value: formatCurrency(wallet.balanceCents),
+      trend: "Live",
+    },
+    {
+      label: "Total Deposited",
+      value: formatCurrency(wallet.totalDepositedCents),
+      trend: "In",
+    },
+    {
+      label: "Total Withdrawn",
+      value: formatCurrency(wallet.totalWithdrawnCents),
+      trend: "Out",
+    },
+  ];
+
   return (
     <div className="flex h-full flex-col">
       <DashboardHeader user={user} />

@@ -1,10 +1,10 @@
 import { redirect } from "next/navigation";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
-import { DashboardContent } from "@/features/dashboard/components/dashboard-content";
 import { getCurrentUser } from "@/features/auth/services/session-service";
+import { TransactionHistory } from "@/features/wallet/components/transaction-history";
 import { getWalletSummary } from "@/features/wallet/services/wallet-store";
 
-export default async function Home() {
+export default async function HistoryPage() {
   const user = await getCurrentUser();
 
   if (!user) {
@@ -15,7 +15,9 @@ export default async function Home() {
 
   return (
     <DashboardShell>
-      <DashboardContent user={user} wallet={wallet} />
+      <div className="h-full overflow-y-auto px-5 py-6 sm:px-8">
+        <TransactionHistory transactions={wallet.transactions} />
+      </div>
     </DashboardShell>
   );
 }

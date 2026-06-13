@@ -1,12 +1,11 @@
 import { logoutAction } from "@/features/auth/actions/auth-actions";
 
 const navigationItems = [
-  "Dashboard",
-  "Levels",
-  "Deposits",
-  "Rewards",
-  "Analytics",
-  "Settings",
+  { href: "/", label: "Dashboard" },
+  { href: "/deposit", label: "Deposit" },
+  { href: "/withdraw", label: "Withdraw" },
+  { href: "/history", label: "History" },
+  { href: "/profile", label: "Profile" },
 ];
 
 export function Sidebar() {
@@ -35,11 +34,11 @@ export function Sidebar() {
                   ? "bg-indigo-50 text-indigo-700"
                   : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
               }`}
-              href="#"
-              key={item}
+              href={item.href}
+              key={item.href}
             >
               <span className="size-2 rounded-full bg-current" />
-              {item}
+              {item.label}
             </a>
           ))}
         </nav>

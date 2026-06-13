@@ -54,7 +54,6 @@ function createReferralCode() {
 }
 
 loadLocalEnv();
-
 const adminEmail = process.env.ADMIN_EMAIL ?? defaultAdminEmail;
 const adminName = process.env.ADMIN_NAME ?? defaultAdminName;
 const adminPassword =
@@ -88,6 +87,10 @@ try {
       $setOnInsert: {
         id: randomUUID(),
         email: adminEmail,
+        balanceCents: 0,
+        totalDepositedCents: 0,
+        totalWithdrawnCents: 0,
+        transactions: [],
         createdAt: now,
       },
     },
