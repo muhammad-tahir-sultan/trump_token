@@ -12,6 +12,38 @@ function formatDate(date: Date) {
   }).format(new Date(date));
 }
 
+function getTransactionLabel(transaction: WalletTransaction) {
+  switch (transaction.type) {
+    case "daily_commission":
+      return "Daily Commission";
+    case "deposit":
+      return "Deposit";
+    case "referral_bonus":
+      return "Referral Bonus";
+    case "withdrawal":
+      return "Withdrawal";
+  }
+}
+
+function getTransactionClassName(transaction: WalletTransaction) {
+  switch (transaction.type) {
+    case "deposit":
+    case "daily_commission":
+    case "referral_bonus":
+      return "bg-emerald-50 text-emerald-700";
+    case "withdrawal":
+      return "bg-amber-50 text-amber-700";
+  }
+}
+
+function getTransactionDetails(transaction: WalletTransaction) {
+  if (transaction.type === "referral_bonus" && transaction.sourceUserName) {
+    return `Bonus from ${transaction.sourceUserName}`;
+  }
+
+  return transaction.description ?? "Wallet transaction";
+}
+
 export function TransactionHistory({ transactions }: TransactionHistoryProps) {
   return (
     <section className="rounded-[2rem] border border-slate-200/80 bg-white p-6 shadow-sm">
@@ -35,11 +67,12 @@ export function TransactionHistory({ transactions }: TransactionHistoryProps) {
         </div>
       ) : (
         <div className="mt-6 overflow-x-auto">
-          <table className="w-full min-w-[640px] text-left text-sm">
+          <table className="w-full min-w-[820px] text-left text-sm">
             <thead>
               <tr className="border-b border-slate-200 text-xs font-black uppercase tracking-[0.16em] text-slate-400">
                 <th className="py-3 pr-4">Type</th>
                 <th className="py-3 pr-4">Amount</th>
+                <th className="py-3 pr-4">Details</th>
                 <th className="py-3 pr-4">Balance After</th>
                 <th className="py-3 pr-4">Status</th>
                 <th className="py-3">Date</th>
@@ -47,7 +80,7 @@ export function TransactionHistory({ transactions }: TransactionHistoryProps) {
             </thead>
             <tbody>
               {transactions.map((transaction) => {
-                const isDeposit = transaction.type === "deposit";
+                const isWithdrawal = transaction.type === "withdrawal";
 
                 return (
                   <tr
@@ -56,18 +89,17 @@ export function TransactionHistory({ transactions }: TransactionHistoryProps) {
                   >
                     <td className="py-4 pr-4">
                       <span
-                        className={`rounded-full px-3 py-1 text-xs font-black ${
-                          isDeposit
-                            ? "bg-emerald-50 text-emerald-700"
-                            : "bg-amber-50 text-amber-700"
-                        }`}
+                        className={`rounded-full px-3 py-1 text-xs font-black ${getTransactionClassName(transaction)}`}
                       >
-                        {isDeposit ? "Deposit" : "Withdrawal"}
+                        {getTransactionLabel(transaction)}
                       </span>
                     </td>
                     <td className="py-4 pr-4 font-black text-slate-950">
-                      {isDeposit ? "+" : "-"}
+                      {isWithdrawal ? "-" : "+"}
                       {formatCurrency(transaction.amountCents)}
+                    </td>
+                    <td className="py-4 pr-4 text-slate-500">
+                      {getTransactionDetails(transaction)}
                     </td>
                     <td className="py-4 pr-4 font-bold text-slate-700">
                       {formatCurrency(transaction.balanceAfterCents)}

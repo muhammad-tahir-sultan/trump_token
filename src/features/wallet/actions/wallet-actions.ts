@@ -46,8 +46,10 @@ export async function depositAction(formData: FormData) {
 
   await depositToWallet(user.id, amountCents);
   revalidatePath("/");
+  revalidatePath("/commission");
   revalidatePath("/profile");
   revalidatePath("/history");
+  revalidatePath("/team");
   redirect(getFeedbackPath("/deposit", "success", "Deposit completed."));
 }
 
@@ -74,7 +76,9 @@ export async function withdrawAction(formData: FormData) {
   }
 
   revalidatePath("/");
+  revalidatePath("/commission");
   revalidatePath("/profile");
   revalidatePath("/history");
+  revalidatePath("/team");
   redirect(getFeedbackPath("/withdraw", "success", "Withdrawal completed."));
 }

@@ -4,6 +4,7 @@ export const levels: Level[] = [
   {
     id: 1,
     name: "Level 1",
+    minimumDepositCents: 10_00,
     minimumDepositLabel: "$10",
     depositRangeLabel: "$10+",
     dailyCommissionRate: 5,
@@ -13,6 +14,7 @@ export const levels: Level[] = [
   {
     id: 2,
     name: "Level 2",
+    minimumDepositCents: 100_00,
     minimumDepositLabel: "$100",
     depositRangeLabel: "$100+",
     dailyCommissionRate: 6,
@@ -22,6 +24,7 @@ export const levels: Level[] = [
   {
     id: 3,
     name: "Level 3",
+    minimumDepositCents: 200_00,
     minimumDepositLabel: "$200",
     depositRangeLabel: "$200 - $500",
     dailyCommissionRate: 7,
@@ -31,6 +34,7 @@ export const levels: Level[] = [
   {
     id: 4,
     name: "Level 4",
+    minimumDepositCents: 500_00,
     minimumDepositLabel: "$500",
     depositRangeLabel: "$500 - $2,000",
     dailyCommissionRate: 9,
@@ -40,6 +44,7 @@ export const levels: Level[] = [
   {
     id: 5,
     name: "Level 5",
+    minimumDepositCents: 2_000_00,
     minimumDepositLabel: "$2,000+",
     depositRangeLabel: "Above $2,000",
     dailyCommissionRate: 12,

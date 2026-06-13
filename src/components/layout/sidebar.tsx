@@ -4,6 +4,8 @@ const navigationItems = [
   { href: "/", label: "Dashboard" },
   { href: "/deposit", label: "Deposit" },
   { href: "/withdraw", label: "Withdraw" },
+  { href: "/commission", label: "Commission" },
+  { href: "/team", label: "Team" },
   { href: "/history", label: "History" },
   { href: "/profile", label: "Profile" },
 ];

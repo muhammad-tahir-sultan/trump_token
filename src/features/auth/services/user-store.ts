@@ -13,7 +13,10 @@ type UserDocument = {
   referredByUserId: string | null;
   role: "admin" | "user";
   balanceCents?: number;
+  lastCommissionClaimedDate?: string | null;
+  totalCommissionCents?: number;
   totalDepositedCents?: number;
+  totalReferralBonusCents?: number;
   totalWithdrawnCents?: number;
   transactions?: unknown[];
   createdAt: Date;
@@ -108,7 +111,10 @@ export async function createUser(input: SignupInput) {
     referredByUserId: referrer.id,
     role: "user",
     balanceCents: 0,
+    lastCommissionClaimedDate: null,
+    totalCommissionCents: 0,
     totalDepositedCents: 0,
+    totalReferralBonusCents: 0,
     totalWithdrawnCents: 0,
     transactions: [],
     createdAt: now,

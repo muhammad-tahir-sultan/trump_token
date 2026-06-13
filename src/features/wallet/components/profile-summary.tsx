@@ -59,6 +59,18 @@ export function ProfileSummary({ user, wallet }: ProfileSummaryProps) {
             {formatCurrency(wallet.totalWithdrawnCents)}
           </p>
         </div>
+        <div className="rounded-[2rem] border border-slate-200/80 bg-white p-6 shadow-sm">
+          <p className="text-sm font-bold text-slate-400">Referral Bonus</p>
+          <p className="mt-2 text-2xl font-black text-emerald-600">
+            {formatCurrency(wallet.totalReferralBonusCents)}
+          </p>
+        </div>
+        <div className="rounded-[2rem] border border-slate-200/80 bg-white p-6 shadow-sm">
+          <p className="text-sm font-bold text-slate-400">Daily Commission</p>
+          <p className="mt-2 text-2xl font-black text-indigo-600">
+            {formatCurrency(wallet.totalCommissionCents)}
+          </p>
+        </div>
       </aside>
     </div>
   );

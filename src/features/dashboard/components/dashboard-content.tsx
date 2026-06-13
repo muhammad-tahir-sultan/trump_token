@@ -21,14 +21,19 @@ export function DashboardContent({ user, wallet }: DashboardContentProps) {
       trend: "Live",
     },
     {
-      label: "Total Deposited",
+      label: "Deposited",
       value: formatCurrency(wallet.totalDepositedCents),
       trend: "In",
     },
     {
-      label: "Total Withdrawn",
-      value: formatCurrency(wallet.totalWithdrawnCents),
-      trend: "Out",
+      label: "Referral Bonus",
+      value: formatCurrency(wallet.totalReferralBonusCents),
+      trend: "1%",
+    },
+    {
+      label: "Daily Commission",
+      value: formatCurrency(wallet.totalCommissionCents),
+      trend: "Earned",
     },
   ];
 
@@ -39,7 +44,10 @@ export function DashboardContent({ user, wallet }: DashboardContentProps) {
         <div className="grid gap-6 xl:grid-cols-[1fr_320px]">
           <div className="space-y-6">
             <DashboardHero level={featuredLevel} />
-            <section className="grid gap-4 sm:grid-cols-3" aria-label="Summary">
+            <section
+              className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"
+              aria-label="Summary"
+            >
               {summaryStats.map((stat) => (
                 <StatCard
                   key={stat.label}
