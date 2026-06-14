@@ -540,3 +540,46 @@ export async function claimDailyCommission(userId: string) {
     throw new CommissionAlreadyClaimedError();
   }
 }
+
+export type AdminUserView = {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  balanceCents: number;
+  totalDepositedCents: number;
+  totalWithdrawnCents: number;
+  createdAt: string;
+};
+
+export async function getAllUsersForAdmin(): Promise<AdminUserView[]> {
+  const usersCollection = await getUsersCollection();
+  const users = await usersCollection.find({}).sort({ createdAt: -1 }).toArray();
+
+  return users.map(user => ({
+    id: user.id,
+    name: user.name || "Unknown",
+    email: user.email || "Unknown",
+    role: (user as any).role || "user",
+    balanceCents: user.balanceCents || 0,
+    totalDepositedCents: user.totalDepositedCents || 0,
+    totalWithdrawnCents: user.totalWithdrawnCents || 0,
+    createdAt: ((user as any).createdAt || new Date()).toISOString(),
+  }));
+}
+
+export async function adminUpdateUserBalance(userId: string, newBalanceCents: number) {
+  const usersCollection = await getUsersCollection();
+  const now = new Date();
+  
+  await usersCollection.updateOne(
+    { id: userId },
+    {
+      $set: {
+        balanceCents: newBalanceCents,
+        updatedAt: now
+      }
+    }
+  );
+}
+

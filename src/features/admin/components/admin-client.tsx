@@ -31,8 +31,19 @@ type CSRequest = {
   createdAt: string;
 };
 
+type AdminUser = {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  balanceCents: number;
+  totalDepositedCents: number;
+  totalWithdrawnCents: number;
+  createdAt: string;
+};
+
 export function AdminClient() {
-  const [activeTab, setActiveTab] = useState<"config" | "transactions" | "support">("transactions");
+  const [activeTab, setActiveTab] = useState<"config" | "transactions" | "support" | "users">("transactions");
   const [isAdmin, setIsAdmin] = useState(false);
   const [verifying, setVerifying] = useState(true);
 
@@ -54,6 +65,11 @@ export function AdminClient() {
   const [ticketsLoading, setTicketsLoading] = useState(true);
   const [ticketFilter, setTicketFilter] = useState("OPEN");
   const [ticketRemark, setTicketRemark] = useState<{ [key: string]: string }>({});
+
+  // Users state
+  const [users, setUsers] = useState<AdminUser[]>([]);
+  const [usersLoading, setUsersLoading] = useState(true);
+  const [balanceUpdateVal, setBalanceUpdateVal] = useState<{ [key: string]: string }>({});
 
   // Load and check user session role
   useEffect(() => {
@@ -129,6 +145,22 @@ export function AdminClient() {
     }
   };
 
+  // Fetch users
+  const fetchUsers = async () => {
+    setUsersLoading(true);
+    try {
+      const res = await fetch("/api/admin/users");
+      if (res.ok) {
+        const data = await res.json();
+        setUsers(data);
+      }
+    } catch (err) {
+      console.error("Failed to load users:", err);
+    } finally {
+      setUsersLoading(false);
+    }
+  };
+
   // Trigger loading when activeTab changes
   useEffect(() => {
     if (!isAdmin) return;
@@ -138,6 +170,8 @@ export function AdminClient() {
       fetchTransactions();
     } else if (activeTab === "support") {
       fetchTickets();
+    } else if (activeTab === "users") {
+      fetchUsers();
     }
   }, [activeTab, isAdmin]);
 
@@ -244,6 +278,38 @@ export function AdminClient() {
     }
   };
 
+  // Handle user balance update
+  const handleUpdateBalance = async (userId: string) => {
+    const newVal = Number(balanceUpdateVal[userId]);
+    if (isNaN(newVal) || newVal < 0) {
+      alert("Invalid balance amount");
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/admin/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, balanceCents: Math.floor(newVal * 100) }),
+      });
+
+      if (res.ok) {
+        alert("Balance updated successfully");
+        fetchUsers();
+        setBalanceUpdateVal(prev => {
+          const next = { ...prev };
+          delete next[userId];
+          return next;
+        });
+      } else {
+        const data = await res.json();
+        alert(data.error || "Failed to update balance");
+      }
+    } catch (err) {
+      alert("Error updating user balance.");
+    }
+  };
+
   if (verifying) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
@@ -284,7 +350,7 @@ export function AdminClient() {
       </div>
 
       {/* Tab Selection */}
-      <div className="flex border-b border-slate-200 gap-6">
+      <div className="flex border-b border-slate-200 gap-6 overflow-x-auto whitespace-nowrap">
         <button
           onClick={() => setActiveTab("transactions")}
           className={`pb-4 text-sm font-black transition relative ${activeTab === "transactions" ? "text-indigo-600 border-b-2 border-indigo-600" : "text-slate-400 hover:text-slate-900"}`}
@@ -296,6 +362,12 @@ export function AdminClient() {
           className={`pb-4 text-sm font-black transition relative ${activeTab === "support" ? "text-indigo-600 border-b-2 border-indigo-600" : "text-slate-400 hover:text-slate-900"}`}
         >
           Support Tickets ({tickets.filter(t => t.status === "OPEN").length})
+        </button>
+        <button
+          onClick={() => setActiveTab("users")}
+          className={`pb-4 text-sm font-black transition relative ${activeTab === "users" ? "text-indigo-600 border-b-2 border-indigo-600" : "text-slate-400 hover:text-slate-900"}`}
+        >
+          Users Management
         </button>
         <button
           onClick={() => setActiveTab("config")}
@@ -575,6 +647,77 @@ export function AdminClient() {
                   </div>
                 );
               })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Tab Content: Users Management */}
+      {activeTab === "users" && (
+        <div className="space-y-6 animate-in fade-in duration-200">
+          {usersLoading && users.length === 0 ? (
+            <div className="rounded-3xl bg-white border border-slate-200/80 p-8 text-center text-slate-500 text-sm font-bold">
+              Loading users...
+            </div>
+          ) : users.length === 0 ? (
+            <div className="rounded-3xl bg-white border border-slate-200/80 p-8 text-center text-slate-500 text-sm font-bold">
+              No users found.
+            </div>
+          ) : (
+            <div className="overflow-x-auto rounded-[2rem] border border-slate-200/80 bg-white shadow-sm">
+              <table className="w-full min-w-[1000px] text-left text-sm">
+                <thead>
+                  <tr className="border-b border-slate-200 text-xs font-black uppercase tracking-[0.16em] text-slate-400 bg-slate-50">
+                    <th className="py-4 px-6">User</th>
+                    <th className="py-4 px-4">Role</th>
+                    <th className="py-4 px-4">Balance</th>
+                    <th className="py-4 px-4">Total Deposited</th>
+                    <th className="py-4 px-4">Total Withdrawn</th>
+                    <th className="py-4 px-6">Update Balance</th>
+                    <th className="py-4 px-6">Joined Date</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {users.map((user) => (
+                    <tr key={user.id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50/50">
+                      <td className="py-5 px-6 font-bold text-slate-950">
+                        <div>{user.name}</div>
+                        <div className="text-xs font-normal text-slate-400">{user.email}</div>
+                      </td>
+                      <td className="py-5 px-4 font-extrabold">
+                        <span className={`rounded-full px-2.5 py-0.5 text-xs font-black capitalize ${user.role === "admin" ? "bg-purple-50 text-purple-700" : "bg-slate-100 text-slate-600"}`}>
+                          {user.role}
+                        </span>
+                      </td>
+                      <td className="py-5 px-4 font-black text-slate-950">${(user.balanceCents / 100).toFixed(2)}</td>
+                      <td className="py-5 px-4 font-bold text-emerald-600">${(user.totalDepositedCents / 100).toFixed(2)}</td>
+                      <td className="py-5 px-4 font-bold text-rose-600">${(user.totalWithdrawnCents / 100).toFixed(2)}</td>
+                      <td className="py-5 px-6">
+                        <div className="flex flex-col gap-2 min-w-[150px]">
+                          <input
+                            type="number"
+                            step="0.01"
+                            placeholder={`$${(user.balanceCents / 100).toFixed(2)}`}
+                            value={balanceUpdateVal[user.id] || ""}
+                            onChange={(e) => setBalanceUpdateVal(prev => ({ ...prev, [user.id]: e.target.value }))}
+                            className="border border-slate-200 rounded-xl px-2.5 py-1 text-xs font-bold w-full outline-none focus:border-indigo-400"
+                          />
+                          <button
+                            onClick={() => handleUpdateBalance(user.id)}
+                            disabled={!balanceUpdateVal[user.id]}
+                            className="rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs py-1.5 transition disabled:opacity-50"
+                          >
+                            Set Balance
+                          </button>
+                        </div>
+                      </td>
+                      <td className="py-5 px-6 text-xs text-slate-400">
+                        {new Date(user.createdAt).toLocaleDateString()}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
         </div>
