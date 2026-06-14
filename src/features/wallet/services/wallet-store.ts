@@ -14,6 +14,7 @@ import type {
 type WalletUserDocument = {
   id: string;
   name?: string;
+  email?: string;
   referredByUserId?: string | null;
   balanceCents?: number;
   lastCommissionClaimedDate?: string | null;
@@ -204,53 +205,298 @@ export async function getWalletSummary(userId: string) {
   return toWalletSummary(user);
 }
 
-export async function depositToWallet(userId: string, amountCents: number) {
-  const usersCollection = await getUsersCollection();
-  const user = await usersCollection.findOne(
-    { id: userId },
-    { projection: { name: 1, referredByUserId: 1 } },
-  );
+export type DepositAddressDocument = {
+  address: string;
+  network: string;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+};
 
-  await usersCollection.updateOne(
-    { id: userId },
-    createCreditUpdatePipeline("deposit", amountCents, "totalDepositedCents"),
-  );
-
-  if (!user?.referredByUserId) {
-    return;
-  }
-
-  const bonusCents = Math.floor(amountCents * 0.01);
-
-  if (bonusCents <= 0) {
-    return;
-  }
-
-  await usersCollection.updateOne(
-    { id: user.referredByUserId },
-    createCreditUpdatePipeline(
-      "referral_bonus",
-      bonusCents,
-      "totalReferralBonusCents",
-      {
-        description: "1% referral bonus from team deposit.",
-        sourceUserId: userId,
-        sourceUserName: user.name,
-      },
-    ),
-  );
+async function getDepositAddressCollection() {
+  const database = await getMongoDatabase();
+  return database.collection<DepositAddressDocument>("deposit_addresses");
 }
 
-export async function withdrawFromWallet(userId: string, amountCents: number) {
+export async function getGlobalDepositAddress() {
+  const collection = await getDepositAddressCollection();
+  const addressDoc = await collection.findOne({ isActive: true });
+  if (!addressDoc) {
+    return {
+      address: "T9yD14Nj9j7xAB4dbGeiX9h8unkKHxuWwb", // Fallback TRON address
+      network: "TRON (TRC-20)",
+    };
+  }
+  return {
+    address: addressDoc.address,
+    network: addressDoc.network,
+  };
+}
+
+export async function setGlobalDepositAddress(address: string, network: string) {
+  const collection = await getDepositAddressCollection();
+  await collection.updateMany({}, { $set: { isActive: false } });
+  await collection.insertOne({
+    address,
+    network,
+    isActive: true,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  });
+}
+
+export async function depositToWallet(userId: string, amountCents: number, depositAddress: string) {
+  const usersCollection = await getUsersCollection();
+  const now = new Date();
+  const transactionId = randomUUID();
+
+  const newTransaction: WalletTransaction = {
+    id: transactionId,
+    type: "deposit",
+    amountCents,
+    status: "pending",
+    balanceAfterCents: 0,
+    createdAt: now,
+    depositAddress,
+  };
+
+  await usersCollection.updateOne(
+    { id: userId },
+    {
+      $push: {
+        transactions: {
+          $each: [newTransaction],
+          $position: 0
+        }
+      } as any,
+      $set: { updatedAt: now }
+    }
+  );
+  return transactionId;
+}
+
+function createWithdrawalPendingPipeline(
+  amountCents: number,
+  withdrawAddress: string,
+  withdrawNetwork: string
+) {
+  const now = new Date();
+  const transactionId = randomUUID();
+
+  return [
+    {
+      $set: {
+        balanceCents: { $subtract: [{ $ifNull: ["$balanceCents", 0] }, amountCents] },
+        updatedAt: now,
+      },
+    },
+    {
+      $set: {
+        transactions: {
+          $concatArrays: [
+            [
+              {
+                amountCents,
+                balanceAfterCents: "$balanceCents",
+                createdAt: now,
+                id: transactionId,
+                status: "pending",
+                type: "withdrawal",
+                withdrawAddress,
+                withdrawNetwork,
+              },
+            ],
+            { $ifNull: ["$transactions", []] },
+          ],
+        },
+      },
+    },
+  ] satisfies Document[];
+}
+
+export async function withdrawFromWallet(
+  userId: string,
+  amountCents: number,
+  withdrawAddress: string,
+  withdrawNetwork: string
+) {
   const usersCollection = await getUsersCollection();
   const result = await usersCollection.updateOne(
     { balanceCents: { $gte: amountCents }, id: userId },
-    createWithdrawalUpdatePipeline(amountCents),
+    createWithdrawalPendingPipeline(amountCents, withdrawAddress, withdrawNetwork),
   );
 
   if (result.modifiedCount === 0) {
     throw new InsufficientBalanceError();
   }
+}
+
+export async function updateTransactionScreenshot(userId: string, transactionId: string, screenshotUrl: string) {
+  const usersCollection = await getUsersCollection();
+  const now = new Date();
+  
+  await usersCollection.updateOne(
+    { id: userId, "transactions.id": transactionId },
+    {
+      $set: {
+        "transactions.$.screenshotUrl": screenshotUrl,
+        "transactions.$.updatedAt": now,
+        updatedAt: now
+      }
+    }
+  );
+}
+
+export async function approveTransaction(userId: string, transactionId: string) {
+  const usersCollection = await getUsersCollection();
+  const user = await usersCollection.findOne({ id: userId });
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  const transactions = user.transactions ?? [];
+  const txIndex = transactions.findIndex(t => t.id === transactionId);
+  if (txIndex === -1) {
+    throw new Error("Transaction not found");
+  }
+
+  const tx = transactions[txIndex];
+  if (tx.status !== "pending") {
+    throw new Error("Transaction is already processed");
+  }
+
+  const now = new Date();
+  
+  if (tx.type === "deposit") {
+    const amountCents = tx.amountCents;
+    const newBalance = (user.balanceCents ?? 0) + amountCents;
+    const newTotalDeposited = (user.totalDepositedCents ?? 0) + amountCents;
+
+    await usersCollection.updateOne(
+      { id: userId, "transactions.id": transactionId },
+      {
+        $set: {
+          balanceCents: newBalance,
+          totalDepositedCents: newTotalDeposited,
+          "transactions.$.status": "completed",
+          "transactions.$.balanceAfterCents": newBalance,
+          "transactions.$.updatedAt": now,
+          updatedAt: now
+        }
+      }
+    );
+
+    if (user.referredByUserId) {
+      const bonusCents = Math.floor(amountCents * 0.01);
+      if (bonusCents > 0) {
+        await usersCollection.updateOne(
+          { id: user.referredByUserId },
+          createCreditUpdatePipeline(
+            "referral_bonus",
+            bonusCents,
+            "totalReferralBonusCents",
+            {
+              description: "1% referral bonus from team deposit.",
+              sourceUserId: userId,
+              sourceUserName: user.name,
+            },
+          ),
+        );
+      }
+    }
+  } else if (tx.type === "withdrawal") {
+    const amountCents = tx.amountCents;
+    const newTotalWithdrawn = (user.totalWithdrawnCents ?? 0) + amountCents;
+    await usersCollection.updateOne(
+      { id: userId, "transactions.id": transactionId },
+      {
+        $set: {
+          totalWithdrawnCents: newTotalWithdrawn,
+          "transactions.$.status": "completed",
+          "transactions.$.updatedAt": now,
+          updatedAt: now
+        }
+      }
+    );
+  }
+}
+
+export async function rejectTransaction(userId: string, transactionId: string, remark?: string) {
+  const usersCollection = await getUsersCollection();
+  const user = await usersCollection.findOne({ id: userId });
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  const transactions = user.transactions ?? [];
+  const txIndex = transactions.findIndex(t => t.id === transactionId);
+  if (txIndex === -1) {
+    throw new Error("Transaction not found");
+  }
+
+  const tx = transactions[txIndex];
+  if (tx.status !== "pending") {
+    throw new Error("Transaction is already processed");
+  }
+
+  const now = new Date();
+
+  if (tx.type === "deposit") {
+    await usersCollection.updateOne(
+      { id: userId, "transactions.id": transactionId },
+      {
+        $set: {
+          "transactions.$.status": "rejected",
+          "transactions.$.adminRemark": remark || "",
+          "transactions.$.updatedAt": now,
+          updatedAt: now
+        }
+      }
+    );
+  } else if (tx.type === "withdrawal") {
+    const amountCents = tx.amountCents;
+    const refundedBalance = (user.balanceCents ?? 0) + amountCents;
+
+    await usersCollection.updateOne(
+      { id: userId, "transactions.id": transactionId },
+      {
+        $set: {
+          balanceCents: refundedBalance,
+          "transactions.$.status": "rejected",
+          "transactions.$.balanceAfterCents": refundedBalance,
+          "transactions.$.adminRemark": remark || "",
+          "transactions.$.updatedAt": now,
+          updatedAt: now
+        }
+      }
+    );
+  }
+}
+
+export type AdminTransactionView = WalletTransaction & {
+  userId: string;
+  userName: string;
+  userEmail: string;
+};
+
+export async function getAllTransactions(): Promise<AdminTransactionView[]> {
+  const usersCollection = await getUsersCollection();
+  const allUsers = await usersCollection.find({}).toArray();
+
+  const allTxs: AdminTransactionView[] = [];
+  for (const user of allUsers) {
+    const txs = user.transactions ?? [];
+    for (const tx of txs) {
+      allTxs.push({
+        ...tx,
+        userId: user.id,
+        userName: user.name || "Unknown",
+        userEmail: user.email || "Unknown",
+      });
+    }
+  }
+
+  return allTxs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 }
 
 export async function claimDailyCommission(userId: string) {

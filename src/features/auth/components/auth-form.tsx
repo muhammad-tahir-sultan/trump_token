@@ -27,12 +27,12 @@ export function AuthForm({
     <div className="w-full max-w-md">
       <div className="mb-8 lg:hidden">
         <div className="grid size-12 place-items-center rounded-2xl bg-indigo-600 text-lg font-black text-white">
-          L
+          R
         </div>
       </div>
 
       <p className="text-sm font-bold uppercase tracking-[0.2em] text-indigo-500">
-        Reward Hub
+        Rivochain
       </p>
       <h1 className="mt-3 text-4xl font-black tracking-tight text-slate-950">
         {title}

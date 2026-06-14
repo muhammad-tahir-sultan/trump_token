@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Level Commission Dashboard",
-  description: "A scalable NFT-style dashboard for deposit levels and commissions.",
+  title: "Rivochain Dashboard",
+  description: "A secure NFT-style deposit level and commission tracking platform.",
 };
 
 export default function RootLayout({
