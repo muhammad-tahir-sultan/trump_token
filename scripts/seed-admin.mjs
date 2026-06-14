@@ -56,8 +56,7 @@ function createReferralCode() {
 loadLocalEnv();
 const adminEmail = process.env.ADMIN_EMAIL ?? defaultAdminEmail;
 const adminName = process.env.ADMIN_NAME ?? defaultAdminName;
-const adminPassword =
-  process.env.ADMIN_PASSWORD ?? `${randomBytes(9).toString("base64url")}A1!`;
+const configuredAdminPassword = process.env.ADMIN_PASSWORD?.trim() || null;
 const client = new MongoClient(getMongoUri());
 
 try {
@@ -68,22 +67,30 @@ try {
   const now = new Date();
   const existingAdmin = await users.findOne({ email: adminEmail });
   const referralCode = existingAdmin?.referralCode ?? createReferralCode();
+  const adminPassword =
+    configuredAdminPassword ??
+    (existingAdmin ? null : `${randomBytes(9).toString("base64url")}A1!`);
 
   await users.createIndex({ email: 1 }, { unique: true });
   await users.createIndex({ referralCode: 1 }, { unique: true });
   await users.createIndex({ referredByUserId: 1 });
 
+  const adminUpdate = {
+    name: adminName,
+    referralCode,
+    referredByUserId: null,
+    role: "admin",
+    updatedAt: now,
+  };
+
+  if (adminPassword) {
+    adminUpdate.passwordHash = hashPassword(adminPassword);
+  }
+
   await users.updateOne(
     { email: adminEmail },
     {
-      $set: {
-        name: adminName,
-        passwordHash: hashPassword(adminPassword),
-        referralCode,
-        referredByUserId: null,
-        role: "admin",
-        updatedAt: now,
-      },
+      $set: adminUpdate,
       $setOnInsert: {
         id: randomUUID(),
         email: adminEmail,
@@ -100,10 +107,18 @@ try {
     { upsert: true },
   );
 
+  const adminRecord = await users.findOne({ email: adminEmail });
+
   console.log("Admin user is ready.");
   console.log(`Email: ${adminEmail}`);
-  console.log(`Password: ${adminPassword}`);
-  console.log(`Referral Code: ${referralCode}`);
+  if (adminPassword) {
+    console.log(`Password: ${adminPassword}`);
+    console.log("Password source: ADMIN_PASSWORD env or first-time generated password.");
+  } else {
+    console.log("Password: unchanged (existing admin password kept).");
+    console.log("Set ADMIN_PASSWORD in .env.local and re-run seed:admin to reset it.");
+  }
+  console.log(`Referral Code: ${adminRecord?.referralCode ?? referralCode}`);
 } finally {
   await client.close();
 }

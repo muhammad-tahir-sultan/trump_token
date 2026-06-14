@@ -6,6 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "seed:admin": "node scripts/seed-admin.mjs",
+    "seed:demo": "node scripts/seed-demo-users.mjs",
     "start": "next start",
     "lint": "eslint"
   },
