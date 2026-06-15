@@ -1,5 +1,6 @@
 import { createHmac, timingSafeEqual } from "crypto";
 import { cookies } from "next/headers";
+import { findUserById } from "@/features/auth/services/user-store";
 import type { AuthenticatedUser } from "@/features/auth/types/auth";
 
 const sessionCookieName = "level_dashboard_session";
@@ -81,11 +82,18 @@ export async function getCurrentUser() {
     return null;
   }
 
+  const user = await findUserById(decodedPayload.id);
+
+  if (!user) {
+    await destroySession();
+    return null;
+  }
+
   return {
-    id: decodedPayload.id,
-    name: decodedPayload.name,
-    email: decodedPayload.email,
-    referralCode: decodedPayload.referralCode,
-    role: decodedPayload.role,
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    referralCode: user.referralCode,
+    role: user.role,
   };
 }

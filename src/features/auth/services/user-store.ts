@@ -86,6 +86,13 @@ export async function findUserByEmail(email: string) {
   return user ? toStoredUser(user) : null;
 }
 
+export async function findUserById(id: string) {
+  const usersCollection = await getUsersCollection();
+  const user = await usersCollection.findOne({ id });
+
+  return user ? toStoredUser(user) : null;
+}
+
 export async function findUserByReferralCode(referralCode: string) {
   const usersCollection = await getUsersCollection();
   const user = await usersCollection.findOne({ referralCode });
