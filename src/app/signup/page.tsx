@@ -7,6 +7,7 @@ import { getCurrentUser } from "@/features/auth/services/session-service";
 type SignupPageProps = {
   searchParams: Promise<{
     error?: string;
+    ref?: string;
   }>;
 };
 
@@ -24,6 +25,7 @@ export default async function SignupPage({ searchParams }: SignupPageProps) {
       <AuthForm
         action={signupAction}
         buttonLabel="Create Account"
+        defaultReferralCode={params.ref?.trim().toUpperCase() ?? ""}
         error={params.error}
         footerHref="/login"
         footerLabel="Login"

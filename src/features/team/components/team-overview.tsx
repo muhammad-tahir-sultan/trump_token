@@ -1,3 +1,4 @@
+import { ReferralShare } from "@/components/ui/referral-share";
 import { formatCurrency } from "@/features/wallet/services/currency";
 import type { TeamSummary } from "@/features/team/types/team";
 
@@ -14,53 +15,48 @@ function formatDate(date: Date) {
 
 export function TeamOverview({ referralCode, team }: TeamOverviewProps) {
   return (
-    <div className="space-y-6">
-      <section className="rounded-[2rem] border border-slate-200/80 bg-white p-6 shadow-sm">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+    <div className="space-y-4 sm:space-y-6">
+      <section className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm sm:rounded-[2rem] sm:p-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
           <div>
-            <p className="text-sm font-bold uppercase tracking-[0.18em] text-indigo-500">
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-indigo-500 sm:text-sm">
               Team
             </p>
-            <h2 className="mt-2 text-3xl font-black tracking-tight text-slate-950">
+            <h2 className="mt-1 text-xl font-black tracking-tight text-slate-950 sm:mt-2 sm:text-3xl">
               Referral Team
             </h2>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
+            <p className="mt-1 text-xs leading-5 text-slate-500 sm:mt-2 sm:text-sm sm:leading-6">
               Jo user aapke referral code se join karega woh yahan team member
               ban kar show hoga. Uski deposits par aapko 1% bonus milega.
             </p>
           </div>
-          <div className="rounded-3xl bg-slate-950 px-5 py-4 text-white">
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
-              Your Code
-            </p>
-            <p className="mt-1 text-2xl font-black">{referralCode}</p>
-          </div>
+          <ReferralShare referralCode={referralCode} />
         </div>
 
-        <div className="mt-6 grid gap-4 sm:grid-cols-3">
-          <div className="rounded-3xl bg-slate-50 p-5">
-            <p className="text-sm font-bold text-slate-400">Team Members</p>
-            <p className="mt-2 text-2xl font-black text-slate-950">
+        <div className="mt-4 grid grid-cols-2 gap-3 sm:mt-6 sm:gap-4 lg:grid-cols-3">
+          <div className="rounded-2xl bg-slate-50 p-3 sm:rounded-3xl sm:p-5">
+            <p className="text-xs font-bold text-slate-400 sm:text-sm">Team Members</p>
+            <p className="mt-1 text-lg font-black text-slate-950 sm:mt-2 sm:text-2xl">
               {team.totalMembers}
             </p>
           </div>
-          <div className="rounded-3xl bg-emerald-50 p-5">
-            <p className="text-sm font-bold text-emerald-700">Team Deposits</p>
-            <p className="mt-2 text-2xl font-black text-emerald-700">
+          <div className="rounded-2xl bg-emerald-50 p-3 sm:rounded-3xl sm:p-5">
+            <p className="text-xs font-bold text-emerald-700 sm:text-sm">Team Deposits</p>
+            <p className="mt-1 text-lg font-black text-emerald-700 sm:mt-2 sm:text-2xl">
               {formatCurrency(team.totalDepositedCents)}
             </p>
           </div>
-          <div className="rounded-3xl bg-amber-50 p-5">
-            <p className="text-sm font-bold text-amber-700">Team Withdrawals</p>
-            <p className="mt-2 text-2xl font-black text-amber-700">
+          <div className="col-span-2 rounded-2xl bg-amber-50 p-3 sm:col-span-1 sm:rounded-3xl sm:p-5">
+            <p className="text-xs font-bold text-amber-700 sm:text-sm">Team Withdrawals</p>
+            <p className="mt-1 text-lg font-black text-amber-700 sm:mt-2 sm:text-2xl">
               {formatCurrency(team.totalWithdrawnCents)}
             </p>
           </div>
         </div>
       </section>
 
-      <section className="rounded-[2rem] border border-slate-200/80 bg-white p-6 shadow-sm">
-        <h3 className="text-xl font-black text-slate-950">Team Members</h3>
+      <section className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm sm:rounded-[2rem] sm:p-6">
+        <h3 className="text-lg font-black text-slate-950 sm:text-xl">Team Members</h3>
         {team.members.length === 0 ? (
           <div className="mt-5 rounded-3xl bg-slate-50 p-6 text-sm font-semibold text-slate-500">
             Abhi aapke referral code se koi user join nahi hua.

@@ -27,7 +27,7 @@ export async function POST(request: Request) {
       }
       const transactionId = await depositToWallet(user.id, amountCents, depositAddress);
 
-      if (screenshotUrl) {
+      if (screenshotUrl && transactionId) {
         await updateTransactionScreenshot(user.id, transactionId, screenshotUrl);
       }
 

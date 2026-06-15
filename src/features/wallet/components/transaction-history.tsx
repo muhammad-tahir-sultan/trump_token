@@ -36,31 +36,9 @@ function getTransactionClassName(transaction: WalletTransaction) {
   }
 }
 
-function getStatusBadgeClass(status: string) {
-  switch (status) {
-    case "pending":
-      return "bg-amber-50 text-amber-700 border border-amber-100";
-    case "completed":
-      return "bg-emerald-50 text-emerald-700 border border-emerald-100";
-    case "rejected":
-    case "failed":
-      return "bg-rose-50 text-rose-700 border border-rose-100";
-    default:
-      return "bg-slate-50 text-slate-500 border border-slate-100";
-  }
-}
-
 function getTransactionDetails(transaction: WalletTransaction) {
   if (transaction.type === "referral_bonus" && transaction.sourceUserName) {
     return `Bonus from ${transaction.sourceUserName}`;
-  }
-  if (transaction.type === "withdrawal" && transaction.withdrawAddress) {
-    const addr = transaction.withdrawAddress;
-    const shortAddr = addr.length > 10 ? `${addr.substring(0, 6)}...${addr.substring(addr.length - 4)}` : addr;
-    return `Withdraw to ${shortAddr} (${transaction.withdrawNetwork})`;
-  }
-  if (transaction.type === "deposit" && transaction.depositAddress) {
-    return `Deposit to TRC-20 Address`;
   }
 
   return transaction.description ?? "Wallet transaction";
@@ -121,29 +99,13 @@ export function TransactionHistory({ transactions }: TransactionHistoryProps) {
                       {formatCurrency(transaction.amountCents)}
                     </td>
                     <td className="py-4 pr-4 text-slate-500">
-                      <div>{getTransactionDetails(transaction)}</div>
-                      {transaction.screenshotUrl && (
-                        <a href={transaction.screenshotUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-600 hover:underline font-bold mt-1 inline-block">
-                          View Receipt
-                        </a>
-                      )}
+                      {getTransactionDetails(transaction)}
                     </td>
                     <td className="py-4 pr-4 font-bold text-slate-700">
-                      {transaction.status === "pending" && isWithdrawal ? (
-                        <span className="text-slate-400 italic text-xs font-normal">Pending Approval</span>
-                      ) : (
-                        formatCurrency(transaction.balanceAfterCents)
-                      )}
+                      {formatCurrency(transaction.balanceAfterCents)}
                     </td>
-                    <td className="py-4 pr-4">
-                      <span className={`rounded-full px-2.5 py-1 text-xs font-bold capitalize ${getStatusBadgeClass(transaction.status)}`}>
-                        {transaction.status}
-                      </span>
-                      {transaction.adminRemark && (
-                        <p className="text-[10px] text-rose-500 font-bold mt-1 leading-tight max-w-[150px]">
-                          Reason: {transaction.adminRemark}
-                        </p>
-                      )}
+                    <td className="py-4 pr-4 font-bold capitalize text-slate-500">
+                      {transaction.status}
                     </td>
                     <td className="py-4 text-slate-500">
                       {formatDate(transaction.createdAt)}

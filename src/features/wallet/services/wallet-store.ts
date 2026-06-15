@@ -26,6 +26,13 @@ type WalletUserDocument = {
   updatedAt: Date;
 };
 
+type SettingsDocument = {
+  key: string;
+  address: string;
+  network: string;
+  updatedAt: Date;
+};
+
 let usersCollectionPromise: Promise<Collection<WalletUserDocument>> | null = null;
 
 export class InsufficientBalanceError extends Error {
@@ -205,125 +212,112 @@ export async function getWalletSummary(userId: string) {
   return toWalletSummary(user);
 }
 
-export type DepositAddressDocument = {
-  address: string;
-  network: string;
-  isActive: boolean;
-  createdAt: Date;
-  updatedAt: Date;
-};
-
-async function getDepositAddressCollection() {
-  const database = await getMongoDatabase();
-  return database.collection<DepositAddressDocument>("deposit_addresses");
-}
-
-export async function getGlobalDepositAddress() {
-  const collection = await getDepositAddressCollection();
-  const addressDoc = await collection.findOne({ isActive: true });
-  if (!addressDoc) {
-    return {
-      address: "T9yD14Nj9j7xAB4dbGeiX9h8unkKHxuWwb", // Fallback TRON address
-      network: "TRON (TRC-20)",
-    };
+export async function depositToWallet(
+  userId: string,
+  amountCents: number,
+  depositAddress?: string,
+): Promise<string | undefined> {
+  if (depositAddress) {
+    return createPendingDeposit(userId, amountCents, depositAddress);
   }
-  return {
-    address: addressDoc.address,
-    network: addressDoc.network,
-  };
+
+  const usersCollection = await getUsersCollection();
+  const user = await usersCollection.findOne(
+    { id: userId },
+    { projection: { name: 1, referredByUserId: 1 } },
+  );
+
+  await usersCollection.updateOne(
+    { id: userId },
+    createCreditUpdatePipeline("deposit", amountCents, "totalDepositedCents"),
+  );
+
+  await applyReferralBonus(usersCollection, user, userId, amountCents);
+  return undefined;
 }
 
-export async function setGlobalDepositAddress(address: string, network: string) {
-  const collection = await getDepositAddressCollection();
-  await collection.updateMany({}, { $set: { isActive: false } });
-  await collection.insertOne({
-    address,
-    network,
-    isActive: true,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  });
-}
-
-export async function depositToWallet(userId: string, amountCents: number, depositAddress: string) {
+async function createPendingDeposit(
+  userId: string,
+  amountCents: number,
+  depositAddress: string,
+) {
   const usersCollection = await getUsersCollection();
   const now = new Date();
   const transactionId = randomUUID();
+  const user = await usersCollection.findOne({ id: userId });
+  const balanceCents = user?.balanceCents ?? 0;
 
-  const newTransaction: WalletTransaction = {
-    id: transactionId,
-    type: "deposit",
+  const transaction: WalletTransaction = {
     amountCents,
-    status: "pending",
-    balanceAfterCents: 0,
+    balanceAfterCents: balanceCents,
     createdAt: now,
     depositAddress,
+    id: transactionId,
+    status: "pending",
+    type: "deposit",
   };
 
   await usersCollection.updateOne(
     { id: userId },
     {
+      $set: { updatedAt: now },
       $push: {
         transactions: {
-          $each: [newTransaction],
-          $position: 0
-        }
-      } as any,
-      $set: { updatedAt: now }
-    }
-  );
-  return transactionId;
-}
-
-function createWithdrawalPendingPipeline(
-  amountCents: number,
-  withdrawAddress: string,
-  withdrawNetwork: string
-) {
-  const now = new Date();
-  const transactionId = randomUUID();
-
-  return [
-    {
-      $set: {
-        balanceCents: { $subtract: [{ $ifNull: ["$balanceCents", 0] }, amountCents] },
-        updatedAt: now,
-      },
-    },
-    {
-      $set: {
-        transactions: {
-          $concatArrays: [
-            [
-              {
-                amountCents,
-                balanceAfterCents: "$balanceCents",
-                createdAt: now,
-                id: transactionId,
-                status: "pending",
-                type: "withdrawal",
-                withdrawAddress,
-                withdrawNetwork,
-              },
-            ],
-            { $ifNull: ["$transactions", []] },
-          ],
+          $each: [transaction],
+          $position: 0,
         },
       },
     },
-  ] satisfies Document[];
+  );
+
+  return transactionId;
+}
+
+async function applyReferralBonus(
+  usersCollection: Collection<WalletUserDocument>,
+  user: Pick<WalletUserDocument, "name" | "referredByUserId"> | null,
+  userId: string,
+  amountCents: number,
+) {
+  if (!user?.referredByUserId) return;
+
+  const bonusCents = Math.floor(amountCents * 0.01);
+  if (bonusCents <= 0) return;
+
+  await usersCollection.updateOne(
+    { id: user.referredByUserId },
+    createCreditUpdatePipeline(
+      "referral_bonus",
+      bonusCents,
+      "totalReferralBonusCents",
+      {
+        description: "1% referral bonus from team deposit.",
+        sourceUserId: userId,
+        sourceUserName: user.name,
+      },
+    ),
+  );
 }
 
 export async function withdrawFromWallet(
   userId: string,
   amountCents: number,
-  withdrawAddress: string,
-  withdrawNetwork: string
+  withdrawAddress?: string,
+  withdrawNetwork?: string,
 ) {
+  if (withdrawAddress && withdrawNetwork) {
+    return createPendingWithdrawal(
+      userId,
+      amountCents,
+      withdrawAddress,
+      withdrawNetwork,
+    );
+  }
+
   const usersCollection = await getUsersCollection();
   const result = await usersCollection.updateOne(
     { balanceCents: { $gte: amountCents }, id: userId },
-    createWithdrawalPendingPipeline(amountCents, withdrawAddress, withdrawNetwork),
+    createWithdrawalUpdatePipeline(amountCents),
   );
 
   if (result.modifiedCount === 0) {
@@ -331,172 +325,199 @@ export async function withdrawFromWallet(
   }
 }
 
-export async function updateTransactionScreenshot(userId: string, transactionId: string, screenshotUrl: string) {
+async function createPendingWithdrawal(
+  userId: string,
+  amountCents: number,
+  withdrawAddress: string,
+  withdrawNetwork: string,
+) {
   const usersCollection = await getUsersCollection();
+  const user = await usersCollection.findOne({ id: userId });
+  const balanceCents = user?.balanceCents ?? 0;
+
+  if (balanceCents < amountCents) {
+    throw new InsufficientBalanceError();
+  }
+
   const now = new Date();
-  
+  const transactionId = randomUUID();
+  const transaction: WalletTransaction = {
+    amountCents,
+    balanceAfterCents: balanceCents,
+    createdAt: now,
+    id: transactionId,
+    status: "pending",
+    type: "withdrawal",
+    withdrawAddress,
+    withdrawNetwork,
+  };
+
+  await usersCollection.updateOne(
+    { id: userId },
+    {
+      $set: { updatedAt: now },
+      $push: {
+        transactions: {
+          $each: [transaction],
+          $position: 0,
+        },
+      },
+    },
+  );
+}
+
+export async function updateTransactionScreenshot(
+  userId: string,
+  transactionId: string,
+  screenshotUrl: string,
+) {
+  const usersCollection = await getUsersCollection();
+
   await usersCollection.updateOne(
     { id: userId, "transactions.id": transactionId },
     {
       $set: {
         "transactions.$.screenshotUrl": screenshotUrl,
-        "transactions.$.updatedAt": now,
-        updatedAt: now
-      }
-    }
+        updatedAt: new Date(),
+      },
+    },
+  );
+}
+
+export async function getAllTransactions() {
+  const usersCollection = await getUsersCollection();
+  const users = await usersCollection
+    .find({}, { projection: { id: 1, name: 1, email: 1, transactions: 1 } })
+    .toArray();
+
+  return users.flatMap((user) =>
+    (user.transactions ?? []).map((transaction) => ({
+      ...transaction,
+      createdAt:
+        transaction.createdAt instanceof Date
+          ? transaction.createdAt.toISOString()
+          : transaction.createdAt,
+      userEmail: user.email ?? "",
+      userId: user.id,
+      userName: user.name ?? "Unknown",
+    })),
   );
 }
 
 export async function approveTransaction(userId: string, transactionId: string) {
   const usersCollection = await getUsersCollection();
   const user = await usersCollection.findOne({ id: userId });
-  if (!user) {
-    throw new Error("User not found");
+
+  if (!user) throw new Error("User not found.");
+
+  const transaction = user.transactions?.find((item) => item.id === transactionId);
+  if (!transaction || transaction.status !== "pending") {
+    throw new Error("Pending transaction not found.");
   }
 
-  const transactions = user.transactions ?? [];
-  const txIndex = transactions.findIndex(t => t.id === transactionId);
-  if (txIndex === -1) {
-    throw new Error("Transaction not found");
-  }
+  if (transaction.type === "deposit") {
+    const newBalance = (user.balanceCents ?? 0) + transaction.amountCents;
 
-  const tx = transactions[txIndex];
-  if (tx.status !== "pending") {
-    throw new Error("Transaction is already processed");
-  }
-
-  const now = new Date();
-  
-  if (tx.type === "deposit") {
-    const amountCents = tx.amountCents;
-    const newBalance = (user.balanceCents ?? 0) + amountCents;
-    const newTotalDeposited = (user.totalDepositedCents ?? 0) + amountCents;
+    await usersCollection.updateOne(
+      { id: userId },
+      {
+        $inc: {
+          balanceCents: transaction.amountCents,
+          totalDepositedCents: transaction.amountCents,
+        },
+        $set: { updatedAt: new Date() },
+      },
+    );
 
     await usersCollection.updateOne(
       { id: userId, "transactions.id": transactionId },
       {
         $set: {
-          balanceCents: newBalance,
-          totalDepositedCents: newTotalDeposited,
-          "transactions.$.status": "completed",
           "transactions.$.balanceAfterCents": newBalance,
-          "transactions.$.updatedAt": now,
-          updatedAt: now
-        }
-      }
-    );
-
-    if (user.referredByUserId) {
-      const bonusCents = Math.floor(amountCents * 0.01);
-      if (bonusCents > 0) {
-        await usersCollection.updateOne(
-          { id: user.referredByUserId },
-          createCreditUpdatePipeline(
-            "referral_bonus",
-            bonusCents,
-            "totalReferralBonusCents",
-            {
-              description: "1% referral bonus from team deposit.",
-              sourceUserId: userId,
-              sourceUserName: user.name,
-            },
-          ),
-        );
-      }
-    }
-  } else if (tx.type === "withdrawal") {
-    const amountCents = tx.amountCents;
-    const newTotalWithdrawn = (user.totalWithdrawnCents ?? 0) + amountCents;
-    await usersCollection.updateOne(
-      { id: userId, "transactions.id": transactionId },
-      {
-        $set: {
-          totalWithdrawnCents: newTotalWithdrawn,
           "transactions.$.status": "completed",
-          "transactions.$.updatedAt": now,
-          updatedAt: now
-        }
-      }
+        },
+      },
     );
-  }
-}
 
-export async function rejectTransaction(userId: string, transactionId: string, remark?: string) {
-  const usersCollection = await getUsersCollection();
-  const user = await usersCollection.findOne({ id: userId });
-  if (!user) {
-    throw new Error("User not found");
+    await applyReferralBonus(usersCollection, user, userId, transaction.amountCents);
+    return;
   }
 
-  const transactions = user.transactions ?? [];
-  const txIndex = transactions.findIndex(t => t.id === transactionId);
-  if (txIndex === -1) {
-    throw new Error("Transaction not found");
-  }
-
-  const tx = transactions[txIndex];
-  if (tx.status !== "pending") {
-    throw new Error("Transaction is already processed");
-  }
-
-  const now = new Date();
-
-  if (tx.type === "deposit") {
-    await usersCollection.updateOne(
-      { id: userId, "transactions.id": transactionId },
+  if (transaction.type === "withdrawal") {
+    const newBalance = (user.balanceCents ?? 0) - transaction.amountCents;
+    const result = await usersCollection.updateOne(
+      { balanceCents: { $gte: transaction.amountCents }, id: userId },
       {
-        $set: {
-          "transactions.$.status": "rejected",
-          "transactions.$.adminRemark": remark || "",
-          "transactions.$.updatedAt": now,
-          updatedAt: now
-        }
-      }
+        $inc: {
+          balanceCents: -transaction.amountCents,
+          totalWithdrawnCents: transaction.amountCents,
+        },
+        $set: { updatedAt: new Date() },
+      },
     );
-  } else if (tx.type === "withdrawal") {
-    const amountCents = tx.amountCents;
-    const refundedBalance = (user.balanceCents ?? 0) + amountCents;
 
-    await usersCollection.updateOne(
-      { id: userId, "transactions.id": transactionId },
-      {
-        $set: {
-          balanceCents: refundedBalance,
-          "transactions.$.status": "rejected",
-          "transactions.$.balanceAfterCents": refundedBalance,
-          "transactions.$.adminRemark": remark || "",
-          "transactions.$.updatedAt": now,
-          updatedAt: now
-        }
-      }
-    );
-  }
-}
-
-export type AdminTransactionView = WalletTransaction & {
-  userId: string;
-  userName: string;
-  userEmail: string;
-};
-
-export async function getAllTransactions(): Promise<AdminTransactionView[]> {
-  const usersCollection = await getUsersCollection();
-  const allUsers = await usersCollection.find({}).toArray();
-
-  const allTxs: AdminTransactionView[] = [];
-  for (const user of allUsers) {
-    const txs = user.transactions ?? [];
-    for (const tx of txs) {
-      allTxs.push({
-        ...tx,
-        userId: user.id,
-        userName: user.name || "Unknown",
-        userEmail: user.email || "Unknown",
-      });
+    if (result.modifiedCount === 0) {
+      throw new InsufficientBalanceError();
     }
-  }
 
-  return allTxs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    await usersCollection.updateOne(
+      { id: userId, "transactions.id": transactionId },
+      {
+        $set: {
+          "transactions.$.balanceAfterCents": newBalance,
+          "transactions.$.status": "completed",
+        },
+      },
+    );
+  }
+}
+
+export async function rejectTransaction(
+  userId: string,
+  transactionId: string,
+  remark?: string,
+) {
+  const usersCollection = await getUsersCollection();
+
+  await usersCollection.updateOne(
+    { id: userId, "transactions.id": transactionId, "transactions.status": "pending" },
+    {
+      $set: {
+        "transactions.$.adminRemark": remark ?? "Rejected by admin",
+        "transactions.$.status": "rejected",
+        updatedAt: new Date(),
+      },
+    },
+  );
+}
+
+export async function getGlobalDepositAddress() {
+  const database = await getMongoDatabase();
+  const settings = database.collection<SettingsDocument>("settings");
+  const config = await settings.findOne({ key: "deposit_address" });
+
+  return {
+    address: config?.address ?? "",
+    network: config?.network ?? "TRON (TRC-20)",
+  };
+}
+
+export async function setGlobalDepositAddress(address: string, network: string) {
+  const database = await getMongoDatabase();
+  const settings = database.collection<SettingsDocument>("settings");
+
+  await settings.updateOne(
+    { key: "deposit_address" },
+    {
+      $set: {
+        address,
+        key: "deposit_address",
+        network,
+        updatedAt: new Date(),
+      },
+    },
+    { upsert: true },
+  );
 }
 
 export async function claimDailyCommission(userId: string) {
@@ -540,46 +561,3 @@ export async function claimDailyCommission(userId: string) {
     throw new CommissionAlreadyClaimedError();
   }
 }
-
-export type AdminUserView = {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-  balanceCents: number;
-  totalDepositedCents: number;
-  totalWithdrawnCents: number;
-  createdAt: string;
-};
-
-export async function getAllUsersForAdmin(): Promise<AdminUserView[]> {
-  const usersCollection = await getUsersCollection();
-  const users = await usersCollection.find({}).sort({ createdAt: -1 }).toArray();
-
-  return users.map(user => ({
-    id: user.id,
-    name: user.name || "Unknown",
-    email: user.email || "Unknown",
-    role: (user as any).role || "user",
-    balanceCents: user.balanceCents || 0,
-    totalDepositedCents: user.totalDepositedCents || 0,
-    totalWithdrawnCents: user.totalWithdrawnCents || 0,
-    createdAt: ((user as any).createdAt || new Date()).toISOString(),
-  }));
-}
-
-export async function adminUpdateUserBalance(userId: string, newBalanceCents: number) {
-  const usersCollection = await getUsersCollection();
-  const now = new Date();
-  
-  await usersCollection.updateOne(
-    { id: userId },
-    {
-      $set: {
-        balanceCents: newBalanceCents,
-        updatedAt: now
-      }
-    }
-  );
-}
-

@@ -15,7 +15,7 @@ export async function DashboardShell({ children }: DashboardShellProps) {
         <Sidebar user={user} />
         <div className="flex flex-1 flex-col overflow-hidden">
           <MobileNavbar user={user} />
-          <main className="flex-1 overflow-hidden">{children}</main>
+          <main className="flex-1 overflow-y-auto pt-14 lg:pt-0">{children}</main>
         </div>
       </div>
     </div>

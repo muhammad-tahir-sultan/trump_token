@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AuthSubmitButton } from "@/features/auth/components/auth-submit-button";
 
 type AuthFormProps = {
   action: (formData: FormData) => Promise<void>;
@@ -10,6 +11,7 @@ type AuthFormProps = {
   mode: "login" | "signup";
   subtitle: string;
   title: string;
+  defaultReferralCode?: string;
 };
 
 export function AuthForm({
@@ -22,6 +24,7 @@ export function AuthForm({
   mode,
   subtitle,
   title,
+  defaultReferralCode = "",
 }: AuthFormProps) {
   return (
     <div className="w-full max-w-md">
@@ -104,25 +107,27 @@ export function AuthForm({
             </label>
             <input
               autoComplete="off"
-              className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold uppercase outline-none transition placeholder:normal-case focus:border-indigo-400 focus:bg-white focus:ring-4 focus:ring-indigo-100"
+              className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold uppercase outline-none transition placeholder:normal-case focus:border-indigo-400 focus:bg-white focus:ring-4 focus:ring-indigo-100 read-only:cursor-not-allowed read-only:bg-indigo-50/60"
+              defaultValue={defaultReferralCode}
               id="referralCode"
               name="referralCode"
               placeholder="Enter sponsor referral code"
+              readOnly={Boolean(defaultReferralCode)}
               required
               type="text"
             />
             <p className="mt-2 text-xs font-semibold text-slate-400">
-              New users must enter an existing referral code to join.
+              {defaultReferralCode
+                ? "Referral code auto-filled from your invite link."
+                : "New users must enter an existing referral code to join."}
             </p>
           </div>
         ) : null}
 
-        <button
-          className="w-full rounded-2xl bg-indigo-600 px-5 py-3.5 text-sm font-black text-white shadow-lg shadow-indigo-200 transition hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-200"
-          type="submit"
-        >
-          {buttonLabel}
-        </button>
+        <AuthSubmitButton
+          label={buttonLabel}
+          pendingLabel={mode === "login" ? "Logging in..." : "Creating account..."}
+        />
       </form>
 
       <p className="mt-6 text-center text-sm font-semibold text-slate-500">

@@ -1,12 +1,13 @@
 import { redirect } from "next/navigation";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { getCurrentUser } from "@/features/auth/services/session-service";
-import { CommissionPanel } from "@/features/commission/components/commission-panel";
+import { CommissionPanelClient } from "@/features/commission/components/commission-panel-client";
 import { getCommissionPreview } from "@/features/commission/services/commission-service";
 import { getWalletSummary } from "@/features/wallet/services/wallet-store";
 
 type CommissionPageProps = {
   searchParams: Promise<{
+    claimed?: string;
     error?: string;
     success?: string;
   }>;
@@ -29,8 +30,9 @@ export default async function CommissionPage({
 
   return (
     <DashboardShell>
-      <div className="h-full overflow-y-auto px-5 py-6 sm:px-8">
-        <CommissionPanel
+      <div className="h-full overflow-y-auto px-3 py-4 sm:px-5 sm:py-6 lg:px-8">
+        <CommissionPanelClient
+          claimedCents={params.claimed ? Number(params.claimed) : 0}
           error={params.error}
           preview={preview}
           success={params.success}

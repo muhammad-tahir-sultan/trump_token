@@ -4,11 +4,7 @@ export type WalletTransactionType =
   | "referral_bonus"
   | "withdrawal";
 
-export type WalletTransactionStatus =
-  | "pending"
-  | "completed"
-  | "rejected"
-  | "failed";
+export type WalletTransactionStatus = "completed" | "pending" | "rejected";
 
 export type WalletTransaction = {
   id: string;
@@ -25,7 +21,6 @@ export type WalletTransaction = {
   withdrawNetwork?: string;
   screenshotUrl?: string;
   adminRemark?: string;
-  updatedAt?: Date;
 };
 
 export type WalletSummary = {

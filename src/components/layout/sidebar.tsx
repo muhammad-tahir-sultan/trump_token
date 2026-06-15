@@ -1,7 +1,3 @@
-"use client";
-
-import { usePathname } from "next/navigation";
-import Link from "next/link";
 import { logoutAction } from "@/features/auth/actions/auth-actions";
 import type { AuthenticatedUser } from "@/features/auth/types/auth";
 
@@ -9,22 +5,22 @@ type SidebarProps = {
   user: AuthenticatedUser | null;
 };
 
-export function Sidebar({ user }: SidebarProps) {
-  const pathname = usePathname();
+const navigationItems = [
+  { href: "/", label: "Dashboard" },
+  { href: "/deposit", label: "Deposit" },
+  { href: "/withdraw", label: "Withdraw" },
+  { href: "/commission", label: "Commission" },
+  { href: "/team", label: "Team" },
+  { href: "/history", label: "History" },
+  { href: "/profile", label: "Profile" },
+  { href: "/support", label: "Support" },
+];
 
-  const navigationItems = [
-    { href: "/", label: "Dashboard" },
-    { href: "/deposit", label: "Deposit" },
-    { href: "/withdraw", label: "Withdraw" },
-    { href: "/commission", label: "Commission" },
-    { href: "/team", label: "Team" },
-    { href: "/history", label: "History" },
-    { href: "/profile", label: "Profile" },
-    { href: "/support", label: "Support" },
-  ];
+export function Sidebar({ user }: SidebarProps) {
+  const items = [...navigationItems];
 
   if (user?.role === "admin") {
-    navigationItems.push({ href: "/admin", label: "Admin Panel" });
+    items.push({ href: "/admin", label: "Admin Panel" });
   }
 
   return (
@@ -35,33 +31,26 @@ export function Sidebar({ user }: SidebarProps) {
             R
           </div>
           <div>
-            <p className="text-sm font-semibold text-slate-400">
-              Rivochain Network
-            </p>
-            <h1 className="text-lg font-black tracking-tight text-slate-950">
-              Rivochain
-            </h1>
+            <p className="text-sm font-semibold text-slate-400">Rivochain Network</p>
+            <h1 className="text-lg font-black tracking-tight text-slate-950">Rivochain</h1>
           </div>
         </div>
 
         <nav className="mt-10 space-y-2" aria-label="Main navigation">
-          {navigationItems.map((item) => {
-            const isActive = pathname === item.href;
-            return (
-              <Link
-                className={`flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold transition ${
-                  isActive
-                    ? "bg-indigo-50 text-indigo-700"
-                    : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
-                }`}
-                href={item.href}
-                key={item.href}
-              >
-                <span className="size-2 rounded-full bg-current" />
-                {item.label}
-              </Link>
-            );
-          })}
+          {items.map((item, index) => (
+            <a
+              className={`flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold transition ${
+                index === 0
+                  ? "bg-indigo-50 text-indigo-700"
+                  : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+              }`}
+              href={item.href}
+              key={item.href}
+            >
+              <span className="size-2 rounded-full bg-current" />
+              {item.label}
+            </a>
+          ))}
         </nav>
 
         <form action={logoutAction} className="mt-auto">

@@ -15,7 +15,7 @@ export default async function ProfilePage() {
 
   return (
     <DashboardShell>
-      <div className="h-full overflow-y-auto px-5 py-6 sm:px-8">
+      <div className="h-full overflow-y-auto px-3 py-4 sm:px-5 sm:py-6 lg:px-8">
         <ProfileSummary user={user} wallet={wallet} />
       </div>
     </DashboardShell>

@@ -22,7 +22,7 @@ export function LevelGrid({ levels }: LevelGridProps) {
         </a>
       </div>
 
-      <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+      <div className="grid grid-cols-2 gap-3 sm:gap-5 xl:grid-cols-3">
         {levels.map((level) => (
           <LevelCard key={level.id} level={level} />
         ))}

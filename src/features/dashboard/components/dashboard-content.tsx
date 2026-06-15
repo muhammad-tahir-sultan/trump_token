@@ -40,14 +40,11 @@ export function DashboardContent({ user, wallet }: DashboardContentProps) {
   return (
     <div className="flex h-full flex-col">
       <DashboardHeader user={user} />
-      <div className="flex-1 overflow-y-auto px-5 py-6 sm:px-8">
-        <div className="grid gap-6 xl:grid-cols-[1fr_320px]">
-          <div className="space-y-6">
+      <div className="flex-1 overflow-y-auto px-3 py-4 sm:px-5 sm:py-6 lg:px-8">
+        <div className="grid gap-4 xl:grid-cols-[1fr_280px] xl:gap-6">
+          <div className="space-y-4 sm:space-y-6">
             <DashboardHero level={featuredLevel} />
-            <section
-              className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"
-              aria-label="Summary"
-            >
+            <section className="grid grid-cols-2 gap-3 sm:gap-4" aria-label="Summary">
               {summaryStats.map((stat) => (
                 <StatCard
                   key={stat.label}
