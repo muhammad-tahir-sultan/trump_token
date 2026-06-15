@@ -1,24 +1,24 @@
 import { NextResponse } from "next/server";
-import { writeFile, mkdir } from "fs/promises";
-import { join } from "path";
 import { getCurrentUser } from "@/features/auth/services/session-service";
+import { uploadPaymentScreenshot } from "@/features/upload/services/cloudinary-client";
 
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
   const user = await getCurrentUser();
+
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {
     const formData = await request.formData();
-    const file = formData.get("file") as File;
+    const file = formData.get("file") as File | null;
+
     if (!file) {
       return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
     }
 
-    // Basic validation
     if (!file.type.startsWith("image/")) {
       return NextResponse.json({ error: "Only image files are allowed" }, { status: 400 });
     }
@@ -29,22 +29,13 @@ export async function POST(request: Request) {
 
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
+    const secureUrl = await uploadPaymentScreenshot(buffer, user.id);
 
-    const uploadsDir = join(process.cwd(), "public", "uploads", "screenshots");
-    // Ensure directory exists
-    await mkdir(uploadsDir, { recursive: true });
-
-    // Create unique filename
-    const filename = `${user.id}-${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
-    const filePath = join(uploadsDir, filename);
-    await writeFile(filePath, buffer);
-
-    const secureUrl = `/uploads/screenshots/${filename}`;
     return NextResponse.json({ secureUrl });
-  } catch (error: any) {
-    return NextResponse.json(
-      { error: error.message || "Failed to upload file" },
-      { status: 500 }
-    );
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Failed to upload file";
+
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
