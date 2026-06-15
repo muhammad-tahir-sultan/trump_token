@@ -1,16 +1,22 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { formatCurrency } from "@/features/wallet/services/currency";
+import { getQuickAmountsForLevel } from "@/features/levels/services/level-service";
+import type { Level } from "@/features/levels/types/level";
 import Link from "next/link";
 
 type DepositFormProps = {
   balanceCents: number;
+  level?: Level;
 };
 
-const QUICK_AMOUNTS = [50, 100, 200, 500];
-
-export function DepositForm({ balanceCents }: DepositFormProps) {
+export function DepositForm({ balanceCents, level }: DepositFormProps) {
+  const minimumDeposit = level ? level.minimumDepositCents / 100 : 10;
+  const quickAmounts = useMemo(
+    () => (level ? getQuickAmountsForLevel(level) : [50, 100, 200, 500]),
+    [level],
+  );
   const [step, setStep] = useState(1);
   const [amount, setAmount] = useState("");
   const [error, setError] = useState("");
@@ -47,8 +53,8 @@ export function DepositForm({ balanceCents }: DepositFormProps) {
   const handleContinue = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     const val = Number(amount);
-    if (!amount || isNaN(val) || val < 10) {
-      setError("Minimum deposit is $10.00.");
+    if (!amount || isNaN(val) || val < minimumDeposit) {
+      setError(`Minimum deposit is $${minimumDeposit.toFixed(2)}.`);
       return;
     }
     setError("");
@@ -189,10 +195,16 @@ export function DepositForm({ balanceCents }: DepositFormProps) {
       <div className="absolute bottom-0 left-0 w-64 h-64 bg-gradient-to-tr from-cyan-400 via-teal-500 to-transparent opacity-10 blur-3xl pointer-events-none"></div>
       
       <div className="relative z-10">
-        <div className="flex justify-between items-center mb-10 pb-6 border-b border-slate-100">
+        <div className="flex justify-between items-center mb-6 pb-4 border-b border-slate-100 sm:mb-10 sm:pb-6">
           <div>
-            <h2 className="text-3xl font-black tracking-tight text-slate-900">Add Funds</h2>
-            <p className="text-sm text-slate-500 font-medium mt-1">Top up your Rivochain balance</p>
+            <h2 className="text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">
+              {level ? `Deposit for ${level.name}` : "Add Funds"}
+            </h2>
+            <p className="text-xs text-slate-500 font-medium mt-1 sm:text-sm">
+              {level
+                ? `Minimum ${level.minimumDepositLabel} · ${level.dailyCommissionRate}% daily commission`
+                : "Top up your Rivochain balance"}
+            </p>
           </div>
           <div className="bg-slate-900 rounded-[1.5rem] px-5 py-3 text-right shadow-lg">
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Balance</p>
@@ -217,7 +229,7 @@ export function DepositForm({ balanceCents }: DepositFormProps) {
                 <span className="text-5xl font-black text-slate-300 mr-2 select-none">$</span>
                 <input 
                   type="number" 
-                  min="10"
+                  min={minimumDeposit}
                   step="0.01"
                   className="text-6xl sm:text-7xl font-black text-slate-900 bg-transparent w-48 text-center outline-none placeholder:text-slate-200 focus:placeholder:text-transparent transition-all"
                   placeholder="0"
@@ -225,12 +237,13 @@ export function DepositForm({ balanceCents }: DepositFormProps) {
                   onChange={(e) => setAmount(e.target.value)}
                 />
               </div>
-              <p className="text-xs font-bold text-slate-400">Minimum deposit is $10.00.</p>
+              <p className="text-xs font-bold text-slate-400">
+                Minimum deposit is ${minimumDeposit.toFixed(2)}.
+              </p>
             </div>
             
-            {/* Quick amounts */}
-            <div className="grid grid-cols-4 gap-3">
-              {QUICK_AMOUNTS.map(amt => (
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
+              {quickAmounts.map((amt) => (
                 <button 
                   key={amt} 
                   onClick={() => setAmount(amt.toString())}

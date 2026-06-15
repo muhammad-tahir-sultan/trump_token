@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { Level } from "@/features/levels/types/level";
 
 type LevelCardProps = {
@@ -6,7 +7,11 @@ type LevelCardProps = {
 
 export function LevelCard({ level }: LevelCardProps) {
   return (
-    <article className="group overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm transition sm:rounded-3xl sm:hover:-translate-y-1 sm:hover:shadow-xl sm:hover:shadow-slate-200">
+    <Link
+      className="block rounded-2xl focus:outline-none focus:ring-4 focus:ring-indigo-100 sm:rounded-3xl"
+      href={`/levels/${level.id}`}
+    >
+      <article className="group h-full overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm transition active:scale-[0.98] sm:rounded-3xl sm:hover:-translate-y-1 sm:hover:shadow-xl sm:hover:shadow-slate-200">
       <div
         className={`h-[5.5rem] bg-gradient-to-br p-3 text-white sm:h-36 sm:p-5 ${level.gradientClassName}`}
       >
@@ -43,6 +48,7 @@ export function LevelCard({ level }: LevelCardProps) {
           </span>
         </div>
       </div>
-    </article>
+      </article>
+    </Link>
   );
 }
