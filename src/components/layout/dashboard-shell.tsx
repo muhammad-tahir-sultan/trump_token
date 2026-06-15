@@ -1,5 +1,6 @@
 import { Sidebar } from "@/components/layout/sidebar";
 import { MobileNavbar } from "@/components/layout/mobile-navbar";
+import { WhatsappSupportButton } from "@/components/layout/whatsapp-support-button";
 import { getCurrentUser } from "@/features/auth/services/session-service";
 
 type DashboardShellProps = {
@@ -16,6 +17,7 @@ export async function DashboardShell({ children }: DashboardShellProps) {
         <div className="flex flex-1 flex-col overflow-hidden">
           <MobileNavbar user={user} />
           <main className="flex-1 overflow-y-auto pt-14 lg:pt-0">{children}</main>
+          {user ? <WhatsappSupportButton /> : null}
         </div>
       </div>
     </div>

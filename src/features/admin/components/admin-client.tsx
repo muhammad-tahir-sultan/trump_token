@@ -56,6 +56,12 @@ export function AdminClient() {
   const [configError, setConfigError] = useState("");
   const [configSuccess, setConfigSuccess] = useState("");
 
+  // WhatsApp support config state
+  const [whatsappNumber, setWhatsappNumber] = useState("");
+  const [whatsappLoading, setWhatsappLoading] = useState(false);
+  const [whatsappError, setWhatsappError] = useState("");
+  const [whatsappSuccess, setWhatsappSuccess] = useState("");
+
   // Transactions state
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [txLoading, setTxLoading] = useState(true);
@@ -114,6 +120,18 @@ export function AdminClient() {
     }
   };
 
+  const fetchWhatsappSupport = async () => {
+    try {
+      const res = await fetch("/api/support/whatsapp");
+      if (res.ok) {
+        const data = await res.json();
+        setWhatsappNumber(data.phoneNumber || "");
+      }
+    } catch (err) {
+      console.error("Failed to load WhatsApp config:", err);
+    }
+  };
+
   // Fetch transactions list
   const fetchTransactions = async () => {
     setTxLoading(true);
@@ -167,6 +185,7 @@ export function AdminClient() {
     if (!isAdmin) return;
     if (activeTab === "config") {
       fetchAddress();
+      fetchWhatsappSupport();
     } else if (activeTab === "transactions") {
       fetchTransactions();
     } else if (activeTab === "support") {
@@ -209,6 +228,40 @@ export function AdminClient() {
       setConfigError(err.message || "Failed to update configuration.");
     } finally {
       setConfigLoading(false);
+    }
+  };
+
+  const handleUpdateWhatsappSupport = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setWhatsappLoading(true);
+    setWhatsappError("");
+    setWhatsappSuccess("");
+
+    if (!whatsappNumber.trim()) {
+      setWhatsappError("WhatsApp number is required.");
+      setWhatsappLoading(false);
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/admin/support-whatsapp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phoneNumber: whatsappNumber }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setWhatsappNumber(data.phoneNumber || whatsappNumber);
+        setWhatsappSuccess("WhatsApp customer service number updated successfully!");
+      } else {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to update WhatsApp number");
+      }
+    } catch (err: any) {
+      setWhatsappError(err.message || "Failed to update WhatsApp number.");
+    } finally {
+      setWhatsappLoading(false);
     }
   };
 
@@ -348,59 +401,100 @@ export function AdminClient() {
 
       {/* Tab Content: Config */}
       {activeTab === "config" && (
-        <section className="rounded-[2rem] border border-slate-200/80 bg-white p-6 shadow-sm max-w-xl animate-in fade-in duration-200">
-          <h3 className="text-lg font-black text-slate-950 mb-4">Set Global Deposit Wallet</h3>
-          <p className="text-xs text-slate-500 mb-6 leading-relaxed">
-            Updating this address will immediately change the wallet QR code and copyable address shown to all users on the deposit page.
-          </p>
+        <div className="space-y-6 max-w-xl animate-in fade-in duration-200">
+          <section className="rounded-[2rem] border border-slate-200/80 bg-white p-6 shadow-sm">
+            <h3 className="text-lg font-black text-slate-950 mb-4">Set Global Deposit Wallet</h3>
+            <p className="text-xs text-slate-500 mb-6 leading-relaxed">
+              Updating this address will immediately change the wallet QR code and copyable address shown to all users on the deposit page.
+            </p>
 
-          {configError ? (
-            <p className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700 mb-6">{configError}</p>
-          ) : null}
-          {configSuccess ? (
-            <p className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700 mb-6">{configSuccess}</p>
-          ) : null}
+            {configError ? (
+              <p className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700 mb-6">{configError}</p>
+            ) : null}
+            {configSuccess ? (
+              <p className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700 mb-6">{configSuccess}</p>
+            ) : null}
 
-          <form onSubmit={handleUpdateConfigAddress} className="space-y-5">
-            <div className="space-y-2">
-              <label className="text-sm font-black text-slate-700" htmlFor="config-network">Network Label</label>
-              <div className="flex rounded-2xl border border-slate-200 bg-slate-50 focus-within:border-indigo-400 focus-within:bg-white focus-within:ring-4 focus-within:ring-indigo-100">
-                <input
-                  id="config-network"
-                  type="text"
-                  placeholder="TRON (TRC-20)"
-                  value={configNetwork}
-                  onChange={(e) => setConfigNetwork(e.target.value)}
-                  className="w-full bg-transparent px-4 py-3 text-sm font-bold text-slate-950 outline-none"
-                  required
-                />
+            <form onSubmit={handleUpdateConfigAddress} className="space-y-5">
+              <div className="space-y-2">
+                <label className="text-sm font-black text-slate-700" htmlFor="config-network">Network Label</label>
+                <div className="flex rounded-2xl border border-slate-200 bg-slate-50 focus-within:border-indigo-400 focus-within:bg-white focus-within:ring-4 focus-within:ring-indigo-100">
+                  <input
+                    id="config-network"
+                    type="text"
+                    placeholder="TRON (TRC-20)"
+                    value={configNetwork}
+                    onChange={(e) => setConfigNetwork(e.target.value)}
+                    className="w-full bg-transparent px-4 py-3 text-sm font-bold text-slate-950 outline-none"
+                    required
+                  />
+                </div>
               </div>
-            </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-black text-slate-700" htmlFor="config-address">USDT Wallet Address</label>
-              <div className="flex rounded-2xl border border-slate-200 bg-slate-50 focus-within:border-indigo-400 focus-within:bg-white focus-within:ring-4 focus-within:ring-indigo-100">
-                <input
-                  id="config-address"
-                  type="text"
-                  placeholder="Enter TRON deposit address"
-                  value={configAddress}
-                  onChange={(e) => setConfigAddress(e.target.value)}
-                  className="w-full bg-transparent px-4 py-3 text-sm font-bold text-slate-950 outline-none font-mono"
-                  required
-                />
+              <div className="space-y-2">
+                <label className="text-sm font-black text-slate-700" htmlFor="config-address">USDT Wallet Address</label>
+                <div className="flex rounded-2xl border border-slate-200 bg-slate-50 focus-within:border-indigo-400 focus-within:bg-white focus-within:ring-4 focus-within:ring-indigo-100">
+                  <input
+                    id="config-address"
+                    type="text"
+                    placeholder="Enter TRON deposit address"
+                    value={configAddress}
+                    onChange={(e) => setConfigAddress(e.target.value)}
+                    className="w-full bg-transparent px-4 py-3 text-sm font-bold text-slate-950 outline-none font-mono"
+                    required
+                  />
+                </div>
               </div>
-            </div>
 
-            <button
-              type="submit"
-              disabled={configLoading}
-              className="rounded-2xl bg-indigo-600 px-6 py-3.5 text-sm font-black text-white hover:bg-indigo-700 transition"
-            >
-              {configLoading ? "Saving..." : "Update Configuration"}
-            </button>
-          </form>
-        </section>
+              <button
+                type="submit"
+                disabled={configLoading}
+                className="rounded-2xl bg-indigo-600 px-6 py-3.5 text-sm font-black text-white hover:bg-indigo-700 transition"
+              >
+                {configLoading ? "Saving..." : "Update Configuration"}
+              </button>
+            </form>
+          </section>
+
+          <section className="rounded-[2rem] border border-slate-200/80 bg-white p-6 shadow-sm">
+            <h3 className="text-lg font-black text-slate-950 mb-4">Customer Service WhatsApp</h3>
+            <p className="text-xs text-slate-500 mb-6 leading-relaxed">
+              This number powers the floating &quot;Contact Customer Service&quot; button for all logged-in users. Include country code without spaces, e.g. 923001234567.
+            </p>
+
+            {whatsappError ? (
+              <p className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700 mb-6">{whatsappError}</p>
+            ) : null}
+            {whatsappSuccess ? (
+              <p className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700 mb-6">{whatsappSuccess}</p>
+            ) : null}
+
+            <form onSubmit={handleUpdateWhatsappSupport} className="space-y-5">
+              <div className="space-y-2">
+                <label className="text-sm font-black text-slate-700" htmlFor="config-whatsapp">WhatsApp Number</label>
+                <div className="flex rounded-2xl border border-slate-200 bg-slate-50 focus-within:border-emerald-400 focus-within:bg-white focus-within:ring-4 focus-within:ring-emerald-100">
+                  <input
+                    id="config-whatsapp"
+                    type="tel"
+                    placeholder="923001234567"
+                    value={whatsappNumber}
+                    onChange={(e) => setWhatsappNumber(e.target.value)}
+                    className="w-full bg-transparent px-4 py-3 text-sm font-bold text-slate-950 outline-none font-mono"
+                    required
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={whatsappLoading}
+                className="rounded-2xl bg-[#25D366] px-6 py-3.5 text-sm font-black text-white hover:bg-[#1ebe5d] transition"
+              >
+                {whatsappLoading ? "Saving..." : "Update WhatsApp Number"}
+              </button>
+            </form>
+          </section>
+        </div>
       )}
 
       {/* Tab Content: Transactions */}
