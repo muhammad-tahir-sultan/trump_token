@@ -276,8 +276,8 @@ export function DepositForm({ balanceCents, level }: DepositFormProps) {
               ) : (
                 <div className="bg-white rounded-3xl p-4 mb-6 shadow-lg shadow-slate-200/50 border border-slate-100 transform transition hover:scale-105 duration-300">
                   <img
-                    src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(addrInfo.address)}`}
-                    alt="QR Code"
+                    src="/deposit-qr.png"
+                    alt="USDT TRC-20 deposit QR code"
                     className="w-48 h-48 object-contain rounded-xl"
                   />
                 </div>

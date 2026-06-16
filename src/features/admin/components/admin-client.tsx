@@ -405,7 +405,7 @@ export function AdminClient() {
           <section className="rounded-[2rem] border border-slate-200/80 bg-white p-6 shadow-sm">
             <h3 className="text-lg font-black text-slate-950 mb-4">Set Global Deposit Wallet</h3>
             <p className="text-xs text-slate-500 mb-6 leading-relaxed">
-              Updating this address will immediately change the wallet QR code and copyable address shown to all users on the deposit page.
+              Updating this address will immediately change the copyable wallet address shown to all users on the deposit page. The scan QR image is fixed.
             </p>
 
             {configError ? (
