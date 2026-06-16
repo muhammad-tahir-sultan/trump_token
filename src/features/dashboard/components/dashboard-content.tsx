@@ -23,17 +23,17 @@ export function DashboardContent({ user, wallet }: DashboardContentProps) {
     {
       label: "Deposited",
       value: formatCurrency(wallet.totalDepositedCents),
-      trend: "In",
+      trend: "Total",
     },
     {
       label: "Referral Bonus",
       value: formatCurrency(wallet.totalReferralBonusCents),
-      trend: "1%",
+      trend: "Bonus",
     },
     {
       label: "Daily Commission",
       value: formatCurrency(wallet.totalCommissionCents),
-      trend: "Earned",
+      trend: "Claimed",
     },
   ];
 
