@@ -146,7 +146,8 @@ export function CommissionPanelClient({
               Claim Balance Commission
             </h2>
             <p className="mt-1 text-xs leading-5 text-slate-500 sm:mt-2 sm:text-sm sm:leading-6">
-              Current balance ke level ke mutabiq daily commission. Din me ek dafa claim.
+              Daily commission based on your current balance tier. Claim once per
+              day.
             </p>
           </div>
           <div className="rounded-2xl bg-slate-950 px-4 py-3 text-white sm:rounded-3xl sm:px-5 sm:py-4">

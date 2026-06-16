@@ -36,8 +36,8 @@ export function CommissionPanel({
             Claim Existing Balance Commission
           </h2>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
-            Aapke current wallet balance ke level ke mutabiq daily commission
-            calculate hoti hai. Commission din me sirf ek dafa claim ho sakti hai.
+            Daily commission is calculated based on your current wallet balance
+            tier. You can claim commission once per day.
           </p>
         </div>
         <div className="rounded-3xl bg-slate-950 px-5 py-4 text-white">

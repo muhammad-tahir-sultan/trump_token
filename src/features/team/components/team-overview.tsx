@@ -26,8 +26,8 @@ export function TeamOverview({ referralCode, team }: TeamOverviewProps) {
               Referral Team
             </h2>
             <p className="mt-1 text-xs leading-5 text-slate-500 sm:mt-2 sm:text-sm sm:leading-6">
-              Jo user aapke referral code se join karega woh yahan team member
-              ban kar show hoga. Uski deposits par aapko 1% bonus milega.
+              Users who join with your referral code will appear here as team
+              members. You earn a 1% bonus on their deposits.
             </p>
           </div>
           <ReferralShare referralCode={referralCode} />
@@ -59,7 +59,7 @@ export function TeamOverview({ referralCode, team }: TeamOverviewProps) {
         <h3 className="text-lg font-black text-slate-950 sm:text-xl">Team Members</h3>
         {team.members.length === 0 ? (
           <div className="mt-5 rounded-3xl bg-slate-50 p-6 text-sm font-semibold text-slate-500">
-            Abhi aapke referral code se koi user join nahi hua.
+            No users have joined with your referral code yet.
           </div>
         ) : (
           <div className="mt-5 overflow-x-auto">
