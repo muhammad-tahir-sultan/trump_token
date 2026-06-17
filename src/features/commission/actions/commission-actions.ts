@@ -6,8 +6,13 @@ import { getCurrentUser } from "@/features/auth/services/session-service";
 import { getCommissionPreview } from "@/features/commission/services/commission-service";
 import {
   CommissionAlreadyClaimedError,
+  CommissionLockedError,
   CommissionNotAvailableError,
+  ReferralCommissionAlreadyClaimedError,
+  ReferralCommissionNotAvailableError,
   claimDailyCommission,
+  claimDailyReferralCommission,
+  getReferralCommissionStatus,
   getWalletSummary,
 } from "@/features/wallet/services/wallet-store";
 
@@ -45,7 +50,41 @@ export async function claimDailyCommissionAction() {
   } catch (error) {
     if (
       error instanceof CommissionAlreadyClaimedError ||
+      error instanceof CommissionLockedError ||
       error instanceof CommissionNotAvailableError
+    ) {
+      redirect(getFeedbackPath("error", error.message));
+    }
+
+    throw error;
+  }
+}
+
+export async function claimDailyReferralCommissionAction() {
+  const user = await getCurrentUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
+  try {
+    const preview = await getReferralCommissionStatus(user.id);
+    const claimedCents = await claimDailyReferralCommission(user.id);
+
+    revalidatePath("/");
+    revalidatePath("/commission");
+    revalidatePath("/history");
+    revalidatePath("/profile");
+    revalidatePath("/team");
+    redirect(
+      getFeedbackPath("success", "Referral commission claimed.", {
+        referralClaimed: String(claimedCents || preview.amountCents),
+      }),
+    );
+  } catch (error) {
+    if (
+      error instanceof ReferralCommissionAlreadyClaimedError ||
+      error instanceof ReferralCommissionNotAvailableError
     ) {
       redirect(getFeedbackPath("error", error.message));
     }

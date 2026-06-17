@@ -2,8 +2,16 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { claimDailyCommissionAction } from "@/features/commission/actions/commission-actions";
+import {
+  claimDailyCommissionAction,
+  claimDailyReferralCommissionAction,
+} from "@/features/commission/actions/commission-actions";
 import { getTodayKey } from "@/features/commission/services/commission-service";
+import type { ReferralCommissionPreview } from "@/features/commission/services/referral-commission-service";
+import {
+  formatRemainingDuration,
+  getCommissionUnlockRemainingMs,
+} from "@/features/commission/services/referral-commission-service";
 import { formatCurrency } from "@/features/wallet/services/currency";
 import type { WalletSummary } from "@/features/wallet/types/wallet";
 
@@ -15,6 +23,8 @@ type CommissionPanelClientProps = {
     eligibleLevel: { name: string } | null;
     rate: number;
   };
+  referralClaimedCents?: number;
+  referralPreview: ReferralCommissionPreview;
   success?: string;
   wallet: WalletSummary;
 };
@@ -49,12 +59,43 @@ function useCountUp(target: number, active: boolean, duration = 1500) {
   return value;
 }
 
+function useCommissionLock(unlockAt: string | null) {
+  const [remainingMs, setRemainingMs] = useState(() =>
+    getCommissionUnlockRemainingMs(unlockAt),
+  );
+
+  useEffect(() => {
+    setRemainingMs(getCommissionUnlockRemainingMs(unlockAt));
+
+    if (!unlockAt) return;
+
+    const timer = window.setInterval(() => {
+      const nextRemaining = getCommissionUnlockRemainingMs(unlockAt);
+      setRemainingMs(nextRemaining);
+
+      if (nextRemaining <= 0) {
+        window.clearInterval(timer);
+      }
+    }, 60_000);
+
+    return () => window.clearInterval(timer);
+  }, [unlockAt]);
+
+  return remainingMs;
+}
+
 function ClaimButton({
   alreadyClaimed,
   canClaim,
+  label,
+  lockedLabel,
+  onClaim,
 }: {
   alreadyClaimed: boolean;
   canClaim: boolean;
+  label: string;
+  lockedLabel?: string;
+  onClaim: () => void;
 }) {
   const [isPending, startTransition] = useTransition();
 
@@ -62,7 +103,7 @@ function ClaimButton({
     <button
       className="rounded-2xl bg-indigo-600 px-5 py-3 text-sm font-black text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-slate-300"
       disabled={!canClaim || isPending}
-      onClick={() => startTransition(() => claimDailyCommissionAction())}
+      onClick={() => startTransition(onClaim)}
       type="button"
     >
       {isPending ? (
@@ -70,10 +111,12 @@ function ClaimButton({
           <span className="size-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
           Claiming...
         </span>
+      ) : lockedLabel ? (
+        lockedLabel
       ) : alreadyClaimed ? (
         "Already Claimed Today"
       ) : (
-        "Claim Daily Commission"
+        label
       )}
     </button>
   );
@@ -83,14 +126,28 @@ export function CommissionPanelClient({
   claimedCents = 0,
   error,
   preview,
+  referralClaimedCents = 0,
+  referralPreview,
   success,
   wallet,
 }: CommissionPanelClientProps) {
   const router = useRouter();
   const [celebrate, setCelebrate] = useState(Boolean(success));
-  const alreadyClaimed = wallet.lastCommissionClaimedDate === getTodayKey();
-  const canClaim = preview.amountCents > 0 && !alreadyClaimed;
+  const todayKey = getTodayKey();
+  const alreadyClaimed = wallet.lastCommissionClaimedDate === todayKey;
+  const referralAlreadyClaimed =
+    wallet.lastReferralCommissionClaimedDate === todayKey;
+  const commissionLockRemainingMs = useCommissionLock(wallet.commissionUnlockAt);
+  const isCommissionLocked = commissionLockRemainingMs > 0;
+  const canClaim =
+    preview.amountCents > 0 && !alreadyClaimed && !isCommissionLocked;
+  const canClaimReferral =
+    referralPreview.amountCents > 0 && !referralAlreadyClaimed;
   const displayBalance = useCountUp(wallet.balanceCents, celebrate);
+  const celebratedAmount =
+    referralClaimedCents > 0
+      ? referralClaimedCents
+      : claimedCents || preview.amountCents;
 
   useEffect(() => {
     if (!success) return;
@@ -105,7 +162,7 @@ export function CommissionPanelClient({
   }, [router, success]);
 
   return (
-    <div className="relative">
+    <div className="relative space-y-4 sm:space-y-6">
       {celebrate ? (
         <div className="pointer-events-none fixed inset-0 z-40 overflow-hidden">
           <div className="absolute inset-0 bg-emerald-500/10 animate-pulse" />
@@ -126,7 +183,7 @@ export function CommissionPanelClient({
                 Commission Claimed
               </p>
               <p className="mt-2 text-4xl font-black text-slate-950">
-                +{formatCurrency(claimedCents || preview.amountCents)}
+                +{formatCurrency(celebratedAmount)}
               </p>
               <p className="mt-2 text-sm font-semibold text-slate-500">
                 Added to your wallet balance
@@ -146,7 +203,8 @@ export function CommissionPanelClient({
               Claim Balance Commission
             </h2>
             <p className="mt-1 text-xs leading-5 text-slate-500 sm:mt-2 sm:text-sm sm:leading-6">
-              Daily commission based on your current balance tier. Claim once per
+              Daily commission based on your current balance tier. After each
+              approved deposit, commission unlocks after 24 hours. Claim once per
               day.
             </p>
           </div>
@@ -174,6 +232,12 @@ export function CommissionPanelClient({
             {success}
           </p>
         ) : null}
+        {isCommissionLocked ? (
+          <p className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-bold text-amber-700 sm:mt-6 sm:text-sm">
+            Commission locked for {formatRemainingDuration(commissionLockRemainingMs)} after
+            your latest approved deposit.
+          </p>
+        ) : null}
 
         <div className="mt-4 grid grid-cols-2 gap-3 sm:mt-6 sm:gap-4 lg:grid-cols-3">
           <div className="rounded-2xl bg-slate-50 p-3 sm:rounded-3xl sm:p-5">
@@ -197,7 +261,72 @@ export function CommissionPanelClient({
         </div>
 
         <div className="mt-4 sm:mt-6">
-          <ClaimButton alreadyClaimed={alreadyClaimed} canClaim={canClaim} />
+          <ClaimButton
+            alreadyClaimed={alreadyClaimed}
+            canClaim={canClaim}
+            label="Claim Daily Commission"
+            lockedLabel={
+              isCommissionLocked
+                ? `Unlocks in ${formatRemainingDuration(commissionLockRemainingMs)}`
+                : undefined
+            }
+            onClaim={() => claimDailyCommissionAction()}
+          />
+        </div>
+      </section>
+
+      <section className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm sm:rounded-[2rem] sm:p-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-600 sm:text-sm">
+              Referral Commission
+            </p>
+            <h2 className="mt-1 text-xl font-black tracking-tight text-slate-950 sm:mt-2 sm:text-3xl">
+              Team Referral Earnings
+            </h2>
+            <p className="mt-1 text-xs leading-5 text-slate-500 sm:mt-2 sm:text-sm sm:leading-6">
+              Earn an immediate 1% bonus when your team deposits. Claim 1% daily
+              on your team&apos;s total wallet balance once per day.
+            </p>
+          </div>
+          <div className="rounded-2xl bg-emerald-950 px-4 py-3 text-white sm:rounded-3xl sm:px-5 sm:py-4">
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-200 sm:text-xs">
+              Team Balance
+            </p>
+            <p className="mt-1 text-xl font-black sm:text-2xl">
+              {formatCurrency(referralPreview.teamBalanceCents)}
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-4 grid grid-cols-2 gap-3 sm:mt-6 sm:gap-4 lg:grid-cols-3">
+          <div className="rounded-2xl bg-slate-50 p-3 sm:rounded-3xl sm:p-5">
+            <p className="text-xs font-bold text-slate-400 sm:text-sm">Team Members</p>
+            <p className="mt-1 text-lg font-black text-slate-950 sm:mt-2 sm:text-2xl">
+              {referralPreview.teamMemberCount}
+            </p>
+          </div>
+          <div className="rounded-2xl bg-emerald-50 p-3 sm:rounded-3xl sm:p-5">
+            <p className="text-xs font-bold text-emerald-700 sm:text-sm">Daily Rate</p>
+            <p className="mt-1 text-lg font-black text-emerald-700 sm:mt-2 sm:text-2xl">
+              {referralPreview.rate}%
+            </p>
+          </div>
+          <div className="col-span-2 rounded-2xl bg-emerald-50 p-3 sm:col-span-1 sm:rounded-3xl sm:p-5">
+            <p className="text-xs font-bold text-emerald-700 sm:text-sm">Today&apos;s Amount</p>
+            <p className="mt-1 text-lg font-black text-emerald-700 sm:mt-2 sm:text-2xl">
+              {formatCurrency(referralPreview.amountCents)}
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-4 sm:mt-6">
+          <ClaimButton
+            alreadyClaimed={referralAlreadyClaimed}
+            canClaim={canClaimReferral}
+            label="Claim Referral Commission"
+            onClaim={() => claimDailyReferralCommissionAction()}
+          />
         </div>
       </section>
     </div>

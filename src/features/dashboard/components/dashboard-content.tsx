@@ -4,6 +4,7 @@ import { DashboardHero } from "@/features/dashboard/components/dashboard-hero";
 import { DashboardHeader } from "@/features/dashboard/components/dashboard-header";
 import { LevelGrid } from "@/features/dashboard/components/level-grid";
 import type { AuthenticatedUser } from "@/features/auth/types/auth";
+import type { ReferralCommissionPreview } from "@/features/commission/services/referral-commission-service";
 import { featuredLevel, levels } from "@/features/levels/data/levels";
 import { formatCurrency } from "@/features/wallet/services/currency";
 import type { WalletSummary } from "@/features/wallet/types/wallet";
@@ -11,9 +12,16 @@ import type { WalletSummary } from "@/features/wallet/types/wallet";
 type DashboardContentProps = {
   user: AuthenticatedUser;
   wallet: WalletSummary;
+  todayTeamCommissionCents: number;
+  referralPreview: ReferralCommissionPreview;
 };
 
-export function DashboardContent({ user, wallet }: DashboardContentProps) {
+export function DashboardContent({
+  user,
+  wallet,
+  todayTeamCommissionCents,
+  referralPreview,
+}: DashboardContentProps) {
   const summaryStats = [
     {
       label: "Wallet Balance",
@@ -26,14 +34,19 @@ export function DashboardContent({ user, wallet }: DashboardContentProps) {
       trend: "Total",
     },
     {
-      label: "Referral Bonus",
-      value: formatCurrency(wallet.totalReferralBonusCents),
-      trend: "Bonus",
-    },
-    {
       label: "Daily Commission",
       value: formatCurrency(wallet.totalCommissionCents),
       trend: "Claimed",
+    },
+    {
+      label: "Today Team Commission",
+      value: formatCurrency(todayTeamCommissionCents),
+      trend: "Today",
+    },
+    {
+      label: "Total Team Commission",
+      value: formatCurrency(wallet.totalReferralBonusCents),
+      trend: `${referralPreview.teamMemberCount} members`,
     },
   ];
 

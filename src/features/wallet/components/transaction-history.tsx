@@ -20,6 +20,8 @@ function getTransactionLabel(transaction: WalletTransaction) {
       return "Deposit";
     case "referral_bonus":
       return "Referral Bonus";
+    case "referral_daily_commission":
+      return "Referral Daily Commission";
     case "withdrawal":
       return "Withdrawal";
   }
@@ -30,6 +32,7 @@ function getTransactionClassName(transaction: WalletTransaction) {
     case "deposit":
     case "daily_commission":
     case "referral_bonus":
+    case "referral_daily_commission":
       return "bg-emerald-50 text-emerald-700";
     case "withdrawal":
       return "bg-amber-50 text-amber-700";

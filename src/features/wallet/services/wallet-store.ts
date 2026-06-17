@@ -5,6 +5,10 @@ import {
   getCommissionPreview,
   getTodayKey,
 } from "@/features/commission/services/commission-service";
+import {
+  COMMISSION_LOCK_MS,
+  getReferralCommissionPreview,
+} from "@/features/commission/services/referral-commission-service";
 import type {
   WalletSummary,
   WalletTransaction,
@@ -17,7 +21,9 @@ type WalletUserDocument = {
   email?: string;
   referredByUserId?: string | null;
   balanceCents?: number;
+  commissionUnlockAt?: Date | null;
   lastCommissionClaimedDate?: string | null;
+  lastReferralCommissionClaimedDate?: string | null;
   totalCommissionCents?: number;
   totalDepositedCents?: number;
   totalReferralBonusCents?: number;
@@ -56,6 +62,29 @@ export class CommissionNotAvailableError extends Error {
   }
 }
 
+export class CommissionLockedError extends Error {
+  constructor(unlockAt: Date) {
+    super(
+      `Daily commission unlocks 24 hours after your latest approved deposit (${unlockAt.toLocaleString()}).`,
+    );
+    this.name = "CommissionLockedError";
+  }
+}
+
+export class ReferralCommissionAlreadyClaimedError extends Error {
+  constructor() {
+    super("Referral commission has already been claimed today.");
+    this.name = "ReferralCommissionAlreadyClaimedError";
+  }
+}
+
+export class ReferralCommissionNotAvailableError extends Error {
+  constructor() {
+    super("No referral commission is available from your team balance.");
+    this.name = "ReferralCommissionNotAvailableError";
+  }
+}
+
 async function getUsersCollection() {
   if (!usersCollectionPromise) {
     usersCollectionPromise = getMongoDatabase().then(async (database) => {
@@ -74,7 +103,9 @@ function toWalletSummary(document: WalletUserDocument | null): WalletSummary {
   if (!document) {
     return {
       balanceCents: 0,
+      commissionUnlockAt: null,
       lastCommissionClaimedDate: null,
+      lastReferralCommissionClaimedDate: null,
       totalCommissionCents: 0,
       totalDepositedCents: 0,
       totalReferralBonusCents: 0,
@@ -107,7 +138,12 @@ function toWalletSummary(document: WalletUserDocument | null): WalletSummary {
 
   return {
     balanceCents: document.balanceCents ?? 0,
+    commissionUnlockAt: document.commissionUnlockAt
+      ? new Date(document.commissionUnlockAt).toISOString()
+      : null,
     lastCommissionClaimedDate: document.lastCommissionClaimedDate ?? null,
+    lastReferralCommissionClaimedDate:
+      document.lastReferralCommissionClaimedDate ?? null,
     totalCommissionCents,
     totalDepositedCents,
     totalReferralBonusCents,
@@ -229,7 +265,14 @@ export async function depositToWallet(
 
   await usersCollection.updateOne(
     { id: userId },
-    createCreditUpdatePipeline("deposit", amountCents, "totalDepositedCents"),
+    [
+      ...createCreditUpdatePipeline("deposit", amountCents, "totalDepositedCents"),
+      {
+        $set: {
+          commissionUnlockAt: new Date(Date.now() + COMMISSION_LOCK_MS),
+        },
+      },
+    ],
   );
 
   await applyReferralBonus(usersCollection, user, userId, amountCents);
@@ -291,7 +334,7 @@ async function applyReferralBonus(
       bonusCents,
       "totalReferralBonusCents",
       {
-        description: "1% referral bonus from team deposit.",
+        description: "Immediate 1% referral bonus from team deposit.",
         sourceUserId: userId,
         sourceUserName: user.name,
       },
@@ -425,7 +468,10 @@ export async function approveTransaction(userId: string, transactionId: string) 
           balanceCents: transaction.amountCents,
           totalDepositedCents: transaction.amountCents,
         },
-        $set: { updatedAt: new Date() },
+        $set: {
+          commissionUnlockAt: new Date(Date.now() + COMMISSION_LOCK_MS),
+          updatedAt: new Date(),
+        },
       },
     );
 
@@ -531,6 +577,10 @@ export async function claimDailyCommission(userId: string) {
     throw new CommissionNotAvailableError();
   }
 
+  if (user.commissionUnlockAt && user.commissionUnlockAt.getTime() > Date.now()) {
+    throw new CommissionLockedError(user.commissionUnlockAt);
+  }
+
   if (user.lastCommissionClaimedDate === todayKey) {
     throw new CommissionAlreadyClaimedError();
   }
@@ -560,4 +610,65 @@ export async function claimDailyCommission(userId: string) {
   if (result.modifiedCount === 0) {
     throw new CommissionAlreadyClaimedError();
   }
+}
+
+export async function getReferralCommissionStatus(userId: string) {
+  const usersCollection = await getUsersCollection();
+  const members = await usersCollection
+    .find({ referredByUserId: userId }, { projection: { balanceCents: 1 } })
+    .toArray();
+  const teamBalanceCents = members.reduce(
+    (total, member) => total + (member.balanceCents ?? 0),
+    0,
+  );
+
+  return getReferralCommissionPreview(teamBalanceCents, members.length);
+}
+
+export async function claimDailyReferralCommission(userId: string) {
+  const usersCollection = await getUsersCollection();
+  const todayKey = getTodayKey();
+  const user = await usersCollection.findOne({ id: userId });
+
+  if (!user) {
+    throw new ReferralCommissionNotAvailableError();
+  }
+
+  const preview = await getReferralCommissionStatus(userId);
+
+  if (preview.amountCents <= 0) {
+    throw new ReferralCommissionNotAvailableError();
+  }
+
+  if (user.lastReferralCommissionClaimedDate === todayKey) {
+    throw new ReferralCommissionAlreadyClaimedError();
+  }
+
+  const result = await usersCollection.updateOne(
+    {
+      id: userId,
+      lastReferralCommissionClaimedDate: { $ne: todayKey },
+    },
+    [
+      ...createCreditUpdatePipeline(
+        "referral_daily_commission",
+        preview.amountCents,
+        "totalReferralBonusCents",
+        {
+          description: `1% daily referral commission on team balance (${preview.teamMemberCount} members).`,
+        },
+      ),
+      {
+        $set: {
+          lastReferralCommissionClaimedDate: todayKey,
+        },
+      },
+    ],
+  );
+
+  if (result.modifiedCount === 0) {
+    throw new ReferralCommissionAlreadyClaimedError();
+  }
+
+  return preview.amountCents;
 }

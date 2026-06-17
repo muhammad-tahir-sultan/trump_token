@@ -37,7 +37,8 @@ export function CommissionPanel({
           </h2>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
             Daily commission is calculated based on your current wallet balance
-            tier. You can claim commission once per day.
+            tier. After each approved deposit, commission unlocks after 24 hours.
+            You can claim commission once per day.
           </p>
         </div>
         <div className="rounded-3xl bg-slate-950 px-5 py-4 text-white">

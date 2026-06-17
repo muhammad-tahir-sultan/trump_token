@@ -3,11 +3,15 @@ import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { getCurrentUser } from "@/features/auth/services/session-service";
 import { CommissionPanelClient } from "@/features/commission/components/commission-panel-client";
 import { getCommissionPreview } from "@/features/commission/services/commission-service";
-import { getWalletSummary } from "@/features/wallet/services/wallet-store";
+import {
+  getReferralCommissionStatus,
+  getWalletSummary,
+} from "@/features/wallet/services/wallet-store";
 
 type CommissionPageProps = {
   searchParams: Promise<{
     claimed?: string;
+    referralClaimed?: string;
     error?: string;
     success?: string;
   }>;
@@ -22,9 +26,10 @@ export default async function CommissionPage({
     redirect("/login");
   }
 
-  const [wallet, params] = await Promise.all([
+  const [wallet, params, referralPreview] = await Promise.all([
     getWalletSummary(user.id),
     searchParams,
+    getReferralCommissionStatus(user.id),
   ]);
   const preview = getCommissionPreview(wallet.balanceCents);
 
@@ -35,6 +40,10 @@ export default async function CommissionPage({
           claimedCents={params.claimed ? Number(params.claimed) : 0}
           error={params.error}
           preview={preview}
+          referralClaimedCents={
+            params.referralClaimed ? Number(params.referralClaimed) : 0
+          }
+          referralPreview={referralPreview}
           success={params.success}
           wallet={wallet}
         />

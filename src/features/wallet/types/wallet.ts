@@ -2,6 +2,7 @@ export type WalletTransactionType =
   | "daily_commission"
   | "deposit"
   | "referral_bonus"
+  | "referral_daily_commission"
   | "withdrawal";
 
 export type WalletTransactionStatus = "completed" | "pending" | "rejected";
@@ -25,7 +26,9 @@ export type WalletTransaction = {
 
 export type WalletSummary = {
   balanceCents: number;
+  commissionUnlockAt: string | null;
   lastCommissionClaimedDate: string | null;
+  lastReferralCommissionClaimedDate: string | null;
   totalCommissionCents: number;
   totalDepositedCents: number;
   totalReferralBonusCents: number;
