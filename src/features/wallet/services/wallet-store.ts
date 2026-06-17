@@ -3,6 +3,7 @@ import type { Collection, Document } from "mongodb";
 import { getMongoDatabase } from "@/features/auth/services/mongodb-client";
 import {
   getCommissionPreview,
+  getEligibleLevel,
   getTodayKey,
 } from "@/features/commission/services/commission-service";
 import {
@@ -128,7 +129,12 @@ function toWalletSummary(document: WalletUserDocument | null): WalletSummary {
   const totalReferralBonusCents =
     document.totalReferralBonusCents ??
     transactions
-      .filter((transaction) => transaction.type === "referral_bonus")
+      .filter(
+        (transaction) =>
+          transaction.type === "referral_bonus" ||
+          transaction.type === "referral_first_day_commission" ||
+          transaction.type === "referral_daily_commission",
+      )
       .reduce((total, transaction) => total + transaction.amountCents, 0);
   const totalCommissionCents =
     document.totalCommissionCents ??
@@ -324,21 +330,36 @@ async function applyReferralBonus(
 ) {
   if (!user?.referredByUserId) return;
 
-  const bonusCents = Math.floor(amountCents * 0.01);
-  if (bonusCents <= 0) return;
+  const eligibleLevel = getEligibleLevel(amountCents);
+  if (!eligibleLevel) return;
+
+  const firstDayCommissionCents = Math.floor(
+    (amountCents * eligibleLevel.dailyCommissionRate) / 100,
+  );
+  if (firstDayCommissionCents <= 0) return;
+
+  const todayKey = getTodayKey();
 
   await usersCollection.updateOne(
     { id: user.referredByUserId },
-    createCreditUpdatePipeline(
-      "referral_bonus",
-      bonusCents,
-      "totalReferralBonusCents",
+    [
+      ...createCreditUpdatePipeline(
+        "referral_first_day_commission",
+        firstDayCommissionCents,
+        "totalReferralBonusCents",
+        {
+          description: `${eligibleLevel.dailyCommissionRate}% first-day referral commission from team deposit (${eligibleLevel.name}).`,
+          sourceUserId: userId,
+          sourceUserName: user.name,
+        },
+      ),
       {
-        description: "Immediate 1% referral bonus from team deposit.",
-        sourceUserId: userId,
-        sourceUserName: user.name,
+        $set: {
+          // Enforce: daily (1%) referral commission starts from next day.
+          lastReferralCommissionClaimedDate: todayKey,
+        },
       },
-    ),
+    ],
   );
 }
 

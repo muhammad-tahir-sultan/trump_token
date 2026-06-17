@@ -2,6 +2,7 @@ export type WalletTransactionType =
   | "daily_commission"
   | "deposit"
   | "referral_bonus"
+  | "referral_first_day_commission"
   | "referral_daily_commission"
   | "withdrawal";
 

@@ -62,6 +62,7 @@ export function getTodayTeamCommissionCents(transactions: WalletTransaction[]) {
       if (transaction.status !== "completed") return false;
       if (
         transaction.type !== "referral_bonus" &&
+        transaction.type !== "referral_first_day_commission" &&
         transaction.type !== "referral_daily_commission"
       ) {
         return false;

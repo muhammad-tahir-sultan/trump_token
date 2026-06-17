@@ -285,8 +285,9 @@ export function CommissionPanelClient({
               Team Referral Earnings
             </h2>
             <p className="mt-1 text-xs leading-5 text-slate-500 sm:mt-2 sm:text-sm sm:leading-6">
-              Earn an immediate 1% bonus when your team deposits. Claim 1% daily
-              on your team&apos;s total wallet balance once per day.
+              When your team deposits, you earn the full level commission rate on
+              the first day. From the second day onward, claim 1% daily on your
+              team&apos;s total wallet balance once per day.
             </p>
           </div>
           <div className="rounded-2xl bg-emerald-950 px-4 py-3 text-white sm:rounded-3xl sm:px-5 sm:py-4">

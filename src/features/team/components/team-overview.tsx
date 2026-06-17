@@ -27,8 +27,8 @@ export function TeamOverview({ referralCode, team }: TeamOverviewProps) {
             </h2>
             <p className="mt-1 text-xs leading-5 text-slate-500 sm:mt-2 sm:text-sm sm:leading-6">
               Users who join with your referral code appear here as team members.
-              You receive an immediate 1% bonus on their deposits and can claim 1%
-              daily on your team balance.
+              You receive the full level commission rate on the first day of their
+              approved deposit, then you can claim 1% daily on your team balance.
             </p>
           </div>
           <ReferralShare referralCode={referralCode} />
