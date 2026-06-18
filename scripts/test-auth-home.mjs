@@ -27,11 +27,15 @@ const payload = Buffer.from(
 const signature = createHmac("sha256", secret).update(payload).digest("hex");
 const cookie = `level_dashboard_session=${payload}.${signature}`;
 
-for (const url of ["http://localhost:3000/", "https://rivochain.vercel.app/"]) {
+for (const url of ["http://localhost:3001/", "https://rivochain.vercel.app/"]) {
   const response = await fetch(url, {
     headers: { Cookie: cookie },
     redirect: "manual",
   });
   const text = await response.text();
-  console.log(url, response.status, text.slice(0, 300));
+  const digestMatch = text.match(/digest":"([^"]+)"/);
+  console.log(url, response.status, digestMatch?.[1] ?? "no digest");
+  if (response.status >= 500) {
+    console.log(text.match(/E\{[^}]+\}/)?.[0] ?? text.slice(0, 500));
+  }
 }

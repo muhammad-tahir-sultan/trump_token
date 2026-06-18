@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { AdminStatsPanel } from "@/features/admin/components/admin-stats-panel";
 import { AdminUsersPanel } from "@/features/admin/components/admin-users-panel";
+import type { AdminPlatformStats } from "@/features/admin/services/admin-stats-store";
 
 type Transaction = {
   id: string;
@@ -45,9 +47,15 @@ type AdminUser = {
 };
 
 export function AdminClient() {
-  const [activeTab, setActiveTab] = useState<"config" | "transactions" | "support" | "users">("transactions");
+  const [activeTab, setActiveTab] = useState<
+    "overview" | "config" | "transactions" | "support" | "users"
+  >("overview");
   const [isAdmin, setIsAdmin] = useState(false);
   const [verifying, setVerifying] = useState(true);
+
+  // Platform stats state
+  const [stats, setStats] = useState<AdminPlatformStats | null>(null);
+  const [statsLoading, setStatsLoading] = useState(true);
 
   // Address config state
   const [configAddress, setConfigAddress] = useState("");
@@ -132,6 +140,21 @@ export function AdminClient() {
     }
   };
 
+  const fetchStats = async () => {
+    setStatsLoading(true);
+    try {
+      const res = await fetch("/api/admin/stats");
+      if (res.ok) {
+        const data = await res.json();
+        setStats(data);
+      }
+    } catch (err) {
+      console.error("Failed to load admin stats:", err);
+    } finally {
+      setStatsLoading(false);
+    }
+  };
+
   // Fetch transactions list
   const fetchTransactions = async () => {
     setTxLoading(true);
@@ -183,7 +206,9 @@ export function AdminClient() {
   // Trigger loading when activeTab changes
   useEffect(() => {
     if (!isAdmin) return;
-    if (activeTab === "config") {
+    if (activeTab === "overview") {
+      fetchStats();
+    } else if (activeTab === "config") {
       fetchAddress();
       fetchWhatsappSupport();
     } else if (activeTab === "transactions") {
@@ -374,6 +399,12 @@ export function AdminClient() {
       {/* Tab Selection */}
       <div className="flex border-b border-slate-200 gap-6 overflow-x-auto whitespace-nowrap">
         <button
+          onClick={() => setActiveTab("overview")}
+          className={`pb-4 text-sm font-black transition relative ${activeTab === "overview" ? "text-indigo-600 border-b-2 border-indigo-600" : "text-slate-400 hover:text-slate-900"}`}
+        >
+          Overview
+        </button>
+        <button
           onClick={() => setActiveTab("transactions")}
           className={`pb-4 text-sm font-black transition relative ${activeTab === "transactions" ? "text-indigo-600 border-b-2 border-indigo-600" : "text-slate-400 hover:text-slate-900"}`}
         >
@@ -398,6 +429,22 @@ export function AdminClient() {
           QR & Deposit Config
         </button>
       </div>
+
+      {activeTab === "overview" && (
+        <div className="animate-in fade-in duration-200">
+          {statsLoading && !stats ? (
+            <div className="rounded-2xl border border-slate-200/80 bg-white p-6 text-center text-sm font-bold text-slate-500 sm:rounded-3xl sm:p-8">
+              Loading platform statistics...
+            </div>
+          ) : stats ? (
+            <AdminStatsPanel stats={stats} />
+          ) : (
+            <div className="rounded-2xl border border-slate-200/80 bg-white p-6 text-center text-sm font-bold text-slate-500 sm:rounded-3xl sm:p-8">
+              Unable to load platform statistics.
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Tab Content: Config */}
       {activeTab === "config" && (

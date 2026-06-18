@@ -11,7 +11,12 @@ export type TeamMember = {
 
 export type TeamSummary = {
   members: TeamMember[];
-  totalDepositedCents: number;
   totalMembers: number;
+  totalBalanceCents: number;
+  totalDepositedCents: number;
   totalWithdrawnCents: number;
+  todayDepositedCents: number;
+  todayWithdrawnCents: number;
+  todayTeamCommissionCents: number;
+  totalTeamCommissionCents: number;
 };

@@ -1,5 +1,9 @@
 import type { WalletTransaction } from "@/features/wallet/types/wallet";
 import { getTodayKey } from "@/features/commission/services/commission-service";
+import {
+  getTransactionDayKey,
+  isReferralTeamTransaction,
+} from "@/features/team/services/team-stats-utils";
 
 export const REFERRAL_DAILY_RATE = 1;
 export const COMMISSION_LOCK_MS = 24 * 60 * 60 * 1000;
@@ -60,20 +64,9 @@ export function getTodayTeamCommissionCents(transactions: WalletTransaction[]) {
   return transactions
     .filter((transaction) => {
       if (transaction.status !== "completed") return false;
-      if (
-        transaction.type !== "referral_bonus" &&
-        transaction.type !== "referral_first_day_commission" &&
-        transaction.type !== "referral_daily_commission"
-      ) {
-        return false;
-      }
+      if (!isReferralTeamTransaction(transaction.type)) return false;
 
-      const createdAt =
-        transaction.createdAt instanceof Date
-          ? transaction.createdAt
-          : new Date(transaction.createdAt);
-
-      return createdAt.toISOString().slice(0, 10) === todayKey;
+      return getTransactionDayKey(transaction.createdAt) === todayKey;
     })
     .reduce((total, transaction) => total + transaction.amountCents, 0);
 }

@@ -1,4 +1,5 @@
 import { ReferralShare } from "@/components/ui/referral-share";
+import { StatCard } from "@/components/ui/stat-card";
 import { formatCurrency } from "@/features/wallet/services/currency";
 import type { TeamSummary } from "@/features/team/types/team";
 
@@ -14,6 +15,49 @@ function formatDate(date: Date) {
 }
 
 export function TeamOverview({ referralCode, team }: TeamOverviewProps) {
+  const statItems = [
+    {
+      label: "Total Team Members",
+      value: String(team.totalMembers),
+      trend: "Members",
+    },
+    {
+      label: "Team Total Deposit",
+      value: formatCurrency(team.totalDepositedCents),
+      trend: "All time",
+    },
+    {
+      label: "Team Total Withdrawal",
+      value: formatCurrency(team.totalWithdrawnCents),
+      trend: "All time",
+    },
+    {
+      label: "Team Total Balance",
+      value: formatCurrency(team.totalBalanceCents),
+      trend: "Live",
+    },
+    {
+      label: "Today Team Deposit",
+      value: formatCurrency(team.todayDepositedCents),
+      trend: "Today",
+    },
+    {
+      label: "Today Team Withdrawal",
+      value: formatCurrency(team.todayWithdrawnCents),
+      trend: "Today",
+    },
+    {
+      label: "Today Team Commission",
+      value: formatCurrency(team.todayTeamCommissionCents),
+      trend: "Today",
+    },
+    {
+      label: "Total Team Commission",
+      value: formatCurrency(team.totalTeamCommissionCents),
+      trend: "Earned",
+    },
+  ];
+
   return (
     <div className="space-y-4 sm:space-y-6">
       <section className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm sm:rounded-[2rem] sm:p-6">
@@ -34,25 +78,15 @@ export function TeamOverview({ referralCode, team }: TeamOverviewProps) {
           <ReferralShare referralCode={referralCode} />
         </div>
 
-        <div className="mt-4 grid grid-cols-2 gap-3 sm:mt-6 sm:gap-4 lg:grid-cols-3">
-          <div className="rounded-2xl bg-slate-50 p-3 sm:rounded-3xl sm:p-5">
-            <p className="text-xs font-bold text-slate-400 sm:text-sm">Team Members</p>
-            <p className="mt-1 text-lg font-black text-slate-950 sm:mt-2 sm:text-2xl">
-              {team.totalMembers}
-            </p>
-          </div>
-          <div className="rounded-2xl bg-emerald-50 p-3 sm:rounded-3xl sm:p-5">
-            <p className="text-xs font-bold text-emerald-700 sm:text-sm">Team Deposits</p>
-            <p className="mt-1 text-lg font-black text-emerald-700 sm:mt-2 sm:text-2xl">
-              {formatCurrency(team.totalDepositedCents)}
-            </p>
-          </div>
-          <div className="col-span-2 rounded-2xl bg-amber-50 p-3 sm:col-span-1 sm:rounded-3xl sm:p-5">
-            <p className="text-xs font-bold text-amber-700 sm:text-sm">Team Withdrawals</p>
-            <p className="mt-1 text-lg font-black text-amber-700 sm:mt-2 sm:text-2xl">
-              {formatCurrency(team.totalWithdrawnCents)}
-            </p>
-          </div>
+        <div className="mt-4 grid grid-cols-2 gap-3 sm:mt-6 sm:gap-4 lg:grid-cols-4">
+          {statItems.map((item) => (
+            <StatCard
+              key={item.label}
+              label={item.label}
+              trend={item.trend}
+              value={item.value}
+            />
+          ))}
         </div>
       </section>
 

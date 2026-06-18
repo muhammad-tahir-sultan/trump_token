@@ -85,7 +85,6 @@ export async function getCurrentUser() {
   const user = await findUserById(decodedPayload.id);
 
   if (!user) {
-    await destroySession();
     return null;
   }
 
