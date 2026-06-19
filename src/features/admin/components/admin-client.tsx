@@ -66,7 +66,9 @@ export function AdminClient() {
 
   // WhatsApp support config state
   const [whatsappNumber, setWhatsappNumber] = useState("");
+  const [whatsappEnabled, setWhatsappEnabled] = useState(false);
   const [whatsappLoading, setWhatsappLoading] = useState(false);
+  const [whatsappToggleLoading, setWhatsappToggleLoading] = useState(false);
   const [whatsappError, setWhatsappError] = useState("");
   const [whatsappSuccess, setWhatsappSuccess] = useState("");
 
@@ -134,6 +136,7 @@ export function AdminClient() {
       if (res.ok) {
         const data = await res.json();
         setWhatsappNumber(data.phoneNumber || "");
+        setWhatsappEnabled(Boolean(data.enabled));
       }
     } catch (err) {
       console.error("Failed to load WhatsApp config:", err);
@@ -256,6 +259,45 @@ export function AdminClient() {
     }
   };
 
+  const handleToggleWhatsappSupport = async () => {
+    const nextEnabled = !whatsappEnabled;
+
+    if (nextEnabled && !whatsappNumber.trim()) {
+      setWhatsappError("Add a WhatsApp number before enabling the button.");
+      setWhatsappSuccess("");
+      return;
+    }
+
+    setWhatsappToggleLoading(true);
+    setWhatsappError("");
+    setWhatsappSuccess("");
+
+    try {
+      const res = await fetch("/api/admin/support-whatsapp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ enabled: nextEnabled }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setWhatsappEnabled(Boolean(data.enabled));
+        setWhatsappSuccess(
+          data.enabled
+            ? "WhatsApp button is now visible to users."
+            : "WhatsApp button is now hidden from users.",
+        );
+      } else {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to update WhatsApp visibility");
+      }
+    } catch (err: any) {
+      setWhatsappError(err.message || "Failed to update WhatsApp visibility.");
+    } finally {
+      setWhatsappToggleLoading(false);
+    }
+  };
+
   const handleUpdateWhatsappSupport = async (e: React.FormEvent) => {
     e.preventDefault();
     setWhatsappLoading(true);
@@ -278,6 +320,7 @@ export function AdminClient() {
       if (res.ok) {
         const data = await res.json();
         setWhatsappNumber(data.phoneNumber || whatsappNumber);
+        setWhatsappEnabled(Boolean(data.enabled));
         setWhatsappSuccess("WhatsApp customer service number updated successfully!");
       } else {
         const data = await res.json();
@@ -506,8 +549,36 @@ export function AdminClient() {
           <section className="rounded-[2rem] border border-slate-200/80 bg-white p-6 shadow-sm">
             <h3 className="text-lg font-black text-slate-950 mb-4">Customer Service WhatsApp</h3>
             <p className="text-xs text-slate-500 mb-6 leading-relaxed">
-              This number powers the floating &quot;Contact Customer Service&quot; button for all logged-in users. Include country code without spaces, e.g. 923001234567.
+              Control the floating &quot;Contact Customer Service&quot; button for logged-in users. Save a number first, then enable it when you want it visible on the website.
             </p>
+
+            <div className="mb-6 flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+              <div>
+                <p className="text-sm font-black text-slate-900">Show WhatsApp button</p>
+                <p className="text-xs text-slate-500 mt-1">
+                  {whatsappEnabled
+                    ? "Visible to all logged-in users"
+                    : "Hidden from users (disabled)"}
+                </p>
+              </div>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={whatsappEnabled}
+                aria-label="Toggle WhatsApp button visibility"
+                disabled={whatsappToggleLoading}
+                onClick={handleToggleWhatsappSupport}
+                className={`relative inline-flex h-8 w-14 shrink-0 items-center rounded-full transition ${
+                  whatsappEnabled ? "bg-[#25D366]" : "bg-slate-300"
+                } disabled:opacity-60`}
+              >
+                <span
+                  className={`inline-block size-6 transform rounded-full bg-white shadow transition ${
+                    whatsappEnabled ? "translate-x-7" : "translate-x-1"
+                  }`}
+                />
+              </button>
+            </div>
 
             {whatsappError ? (
               <p className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700 mb-6">{whatsappError}</p>

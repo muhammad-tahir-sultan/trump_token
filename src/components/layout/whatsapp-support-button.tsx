@@ -12,7 +12,7 @@ export function WhatsappSupportButton() {
         if (!res.ok) return;
 
         const data = await res.json();
-        if (data.whatsappUrl) {
+        if (data.enabled && data.whatsappUrl) {
           setWhatsappUrl(data.whatsappUrl);
         }
       } catch {

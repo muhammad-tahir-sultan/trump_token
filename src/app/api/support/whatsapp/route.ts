@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/features/auth/services/session-service";
 import {
   buildWhatsappUrl,
-  getSupportWhatsappNumber,
+  getSupportWhatsappSettings,
 } from "@/features/support/services/support-settings-store";
 
 export async function GET() {
@@ -13,11 +13,13 @@ export async function GET() {
   }
 
   try {
-    const phoneNumber = await getSupportWhatsappNumber();
+    const settings = await getSupportWhatsappSettings();
+    const isVisible = settings.enabled && settings.phoneNumber.length > 0;
 
     return NextResponse.json({
-      phoneNumber,
-      whatsappUrl: phoneNumber ? buildWhatsappUrl(phoneNumber) : "",
+      phoneNumber: settings.phoneNumber,
+      enabled: settings.enabled,
+      whatsappUrl: isVisible ? buildWhatsappUrl(settings.phoneNumber) : "",
     });
   } catch (error) {
     const message =

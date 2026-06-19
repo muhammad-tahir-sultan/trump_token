@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/features/auth/services/session-service";
-import { setSupportWhatsappNumber } from "@/features/support/services/support-settings-store";
+import { updateSupportWhatsappSettings } from "@/features/support/services/support-settings-store";
 
 export async function POST(request: Request) {
   const user = await getCurrentUser();
@@ -10,21 +10,35 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { phoneNumber } = await request.json();
+    const body = await request.json();
+    const phoneNumber =
+      typeof body.phoneNumber === "string" ? body.phoneNumber : undefined;
+    const enabled =
+      typeof body.enabled === "boolean" ? body.enabled : undefined;
 
-    if (!phoneNumber || typeof phoneNumber !== "string") {
+    if (phoneNumber === undefined && enabled === undefined) {
+      return NextResponse.json(
+        { error: "Provide a WhatsApp number or enabled flag to update." },
+        { status: 400 },
+      );
+    }
+
+    if (phoneNumber !== undefined && !phoneNumber.trim()) {
       return NextResponse.json(
         { error: "WhatsApp number is required." },
         { status: 400 },
       );
     }
 
-    const normalized = await setSupportWhatsappNumber(phoneNumber);
+    const settings = await updateSupportWhatsappSettings({
+      phoneNumber,
+      enabled,
+    });
 
-    return NextResponse.json({ success: true, phoneNumber: normalized });
+    return NextResponse.json({ success: true, ...settings });
   } catch (error) {
     const message =
-      error instanceof Error ? error.message : "Failed to update WhatsApp number";
+      error instanceof Error ? error.message : "Failed to update WhatsApp settings";
 
     return NextResponse.json({ error: message }, { status: 500 });
   }
