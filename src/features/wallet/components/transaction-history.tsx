@@ -43,11 +43,44 @@ function getTransactionClassName(transaction: WalletTransaction) {
 }
 
 function getTransactionDetails(transaction: WalletTransaction) {
+  if (transaction.type === "withdrawal") {
+    const address = transaction.withdrawAddress
+      ? `To ${transaction.withdrawAddress}`
+      : "Withdrawal request";
+    return transaction.withdrawNetwork
+      ? `${address} · ${transaction.withdrawNetwork}`
+      : address;
+  }
+
   if (transaction.type === "referral_bonus" && transaction.sourceUserName) {
     return `Bonus from ${transaction.sourceUserName}`;
   }
 
   return transaction.description ?? "Wallet transaction";
+}
+
+function getStatusLabel(transaction: WalletTransaction) {
+  if (transaction.status === "pending") {
+    return transaction.type === "withdrawal" ? "Processing" : "Pending";
+  }
+
+  if (transaction.status === "rejected") {
+    return "Rejected";
+  }
+
+  return "Completed";
+}
+
+function getStatusClassName(transaction: WalletTransaction) {
+  if (transaction.status === "pending") {
+    return "text-amber-700";
+  }
+
+  if (transaction.status === "rejected") {
+    return "text-rose-600";
+  }
+
+  return "text-emerald-700";
 }
 
 export function TransactionHistory({ transactions }: TransactionHistoryProps) {
@@ -110,8 +143,15 @@ export function TransactionHistory({ transactions }: TransactionHistoryProps) {
                     <td className="py-4 pr-4 font-bold text-slate-700">
                       {formatCurrency(transaction.balanceAfterCents)}
                     </td>
-                    <td className="py-4 pr-4 font-bold capitalize text-slate-500">
-                      {transaction.status}
+                    <td className="py-4 pr-4 font-bold capitalize">
+                      <span className={getStatusClassName(transaction)}>
+                        {getStatusLabel(transaction)}
+                      </span>
+                      {transaction.status === "rejected" && transaction.adminRemark ? (
+                        <p className="mt-1 text-xs font-semibold normal-case text-rose-500">
+                          {transaction.adminRemark}
+                        </p>
+                      ) : null}
                     </td>
                     <td className="py-4 text-slate-500">
                       {formatDate(transaction.createdAt)}

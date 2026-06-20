@@ -5,6 +5,10 @@ export class InvalidWalletAmountError extends Error {
   }
 }
 
+export function isValidTrc20Address(address: string) {
+  return /^T[1-9A-HJ-NP-Za-km-z]{33}$/.test(address.trim());
+}
+
 export function getAmountCents(formData: FormData) {
   const rawAmount = String(formData.get("amount") ?? "").trim();
 

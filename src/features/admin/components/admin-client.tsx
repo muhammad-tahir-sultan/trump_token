@@ -687,7 +687,9 @@ export function AdminClient() {
                         </td>
                         <td className="py-5 px-4">
                           <span className={`rounded-full px-2 py-0.5 text-xs font-bold capitalize ${tx.status === "pending" ? "text-amber-700 bg-amber-50 border border-amber-100" : tx.status === "completed" ? "text-emerald-700 bg-emerald-50 border border-emerald-100" : "text-rose-700 bg-rose-50 border border-rose-100"}`}>
-                            {tx.status}
+                            {tx.type === "withdrawal" && tx.status === "pending"
+                              ? "processing"
+                              : tx.status}
                           </span>
                           {tx.adminRemark && <p className="text-[10px] text-rose-500 font-bold mt-1 max-w-[150px]">{tx.adminRemark}</p>}
                         </td>

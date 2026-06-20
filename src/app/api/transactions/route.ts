@@ -5,6 +5,9 @@ import {
   withdrawFromWallet,
   updateTransactionScreenshot,
 } from "@/features/wallet/services/wallet-store";
+import { isValidTrc20Address } from "@/features/wallet/services/wallet-validation";
+
+const TRC20_NETWORK = "TRON (TRC-20)";
 
 export async function POST(request: Request) {
   const user = await getCurrentUser();
@@ -13,7 +16,8 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { type, amount, depositAddress, withdrawAddress, withdrawNetwork, screenshotUrl } = await request.json();
+    const { type, amount, depositAddress, withdrawAddress, screenshotUrl } =
+      await request.json();
 
     if (!type || !amount || Number(amount) <= 0) {
       return NextResponse.json({ error: "Invalid type or amount" }, { status: 400 });
@@ -32,19 +36,38 @@ export async function POST(request: Request) {
       }
 
       return NextResponse.json({ success: true, transactionId });
-    } else if (type === "withdrawal") {
-      if (!withdrawAddress || !withdrawNetwork) {
-        return NextResponse.json({ error: "Withdraw address and network are required" }, { status: 400 });
-      }
-      await withdrawFromWallet(user.id, amountCents, withdrawAddress, withdrawNetwork);
-      return NextResponse.json({ success: true });
-    } else {
-      return NextResponse.json({ error: "Invalid transaction type" }, { status: 400 });
     }
-  } catch (error: any) {
-    return NextResponse.json(
-      { error: error.message || "Transaction request failed" },
-      { status: 400 }
-    );
+
+    if (type === "withdrawal") {
+      if (!withdrawAddress || typeof withdrawAddress !== "string") {
+        return NextResponse.json(
+          { error: "TRC-20 wallet address is required." },
+          { status: 400 },
+        );
+      }
+
+      if (!isValidTrc20Address(withdrawAddress)) {
+        return NextResponse.json(
+          { error: "Enter a valid TRC-20 wallet address (starts with T, 34 characters)." },
+          { status: 400 },
+        );
+      }
+
+      const transactionId = await withdrawFromWallet(
+        user.id,
+        amountCents,
+        withdrawAddress.trim(),
+        TRC20_NETWORK,
+      );
+
+      return NextResponse.json({ success: true, transactionId });
+    }
+
+    return NextResponse.json({ error: "Invalid transaction type" }, { status: 400 });
+  } catch (error: unknown) {
+    const message =
+      error instanceof Error ? error.message : "Transaction request failed";
+
+    return NextResponse.json({ error: message }, { status: 400 });
   }
 }

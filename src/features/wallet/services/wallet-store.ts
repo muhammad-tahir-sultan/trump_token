@@ -124,7 +124,11 @@ function toWalletSummary(document: WalletUserDocument | null): WalletSummary {
   const totalWithdrawnCents =
     document.totalWithdrawnCents ??
     transactions
-      .filter((transaction) => transaction.type === "withdrawal")
+      .filter(
+        (transaction) =>
+          transaction.type === "withdrawal" &&
+          transaction.status === "completed",
+      )
       .reduce((total, transaction) => total + transaction.amountCents, 0);
   const totalReferralBonusCents =
     document.totalReferralBonusCents ??
@@ -396,38 +400,49 @@ async function createPendingWithdrawal(
   withdrawNetwork: string,
 ) {
   const usersCollection = await getUsersCollection();
-  const user = await usersCollection.findOne({ id: userId });
-  const balanceCents = user?.balanceCents ?? 0;
+  const now = new Date();
+  const transactionId = randomUUID();
 
-  if (balanceCents < amountCents) {
+  const result = await usersCollection.updateOne(
+    { balanceCents: { $gte: amountCents }, id: userId },
+    [
+      {
+        $set: {
+          balanceCents: {
+            $subtract: [{ $ifNull: ["$balanceCents", 0] }, amountCents],
+          },
+          updatedAt: now,
+        },
+      },
+      {
+        $set: {
+          transactions: {
+            $concatArrays: [
+              [
+                {
+                  amountCents,
+                  balanceAfterCents: "$balanceCents",
+                  createdAt: now,
+                  id: transactionId,
+                  status: "pending",
+                  type: "withdrawal",
+                  withdrawAddress,
+                  withdrawNetwork,
+                },
+              ],
+              { $ifNull: ["$transactions", []] },
+            ],
+          },
+        },
+      },
+    ],
+  );
+
+  if (result.modifiedCount === 0) {
     throw new InsufficientBalanceError();
   }
 
-  const now = new Date();
-  const transactionId = randomUUID();
-  const transaction: WalletTransaction = {
-    amountCents,
-    balanceAfterCents: balanceCents,
-    createdAt: now,
-    id: transactionId,
-    status: "pending",
-    type: "withdrawal",
-    withdrawAddress,
-    withdrawNetwork,
-  };
-
-  await usersCollection.updateOne(
-    { id: userId },
-    {
-      $set: { updatedAt: now },
-      $push: {
-        transactions: {
-          $each: [transaction],
-          $position: 0,
-        },
-      },
-    },
-  );
+  return transactionId;
 }
 
 export async function updateTransactionScreenshot(
@@ -511,28 +526,13 @@ export async function approveTransaction(userId: string, transactionId: string) 
   }
 
   if (transaction.type === "withdrawal") {
-    const newBalance = (user.balanceCents ?? 0) - transaction.amountCents;
-    const result = await usersCollection.updateOne(
-      { balanceCents: { $gte: transaction.amountCents }, id: userId },
-      {
-        $inc: {
-          balanceCents: -transaction.amountCents,
-          totalWithdrawnCents: transaction.amountCents,
-        },
-        $set: { updatedAt: new Date() },
-      },
-    );
-
-    if (result.modifiedCount === 0) {
-      throw new InsufficientBalanceError();
-    }
-
     await usersCollection.updateOne(
       { id: userId, "transactions.id": transactionId },
       {
+        $inc: { totalWithdrawnCents: transaction.amountCents },
         $set: {
-          "transactions.$.balanceAfterCents": newBalance,
           "transactions.$.status": "completed",
+          updatedAt: new Date(),
         },
       },
     );
@@ -545,6 +545,42 @@ export async function rejectTransaction(
   remark?: string,
 ) {
   const usersCollection = await getUsersCollection();
+  const user = await usersCollection.findOne({ id: userId });
+
+  if (!user) {
+    throw new Error("User not found.");
+  }
+
+  const transaction = user.transactions?.find((item) => item.id === transactionId);
+  if (!transaction || transaction.status !== "pending") {
+    throw new Error("Pending transaction not found.");
+  }
+
+  if (transaction.type === "withdrawal") {
+    const newBalance = (user.balanceCents ?? 0) + transaction.amountCents;
+
+    await usersCollection.updateOne(
+      { id: userId },
+      {
+        $inc: { balanceCents: transaction.amountCents },
+        $set: { updatedAt: new Date() },
+      },
+    );
+
+    await usersCollection.updateOne(
+      { id: userId, "transactions.id": transactionId, "transactions.status": "pending" },
+      {
+        $set: {
+          "transactions.$.adminRemark": remark ?? "Rejected by admin",
+          "transactions.$.balanceAfterCents": newBalance,
+          "transactions.$.status": "rejected",
+          updatedAt: new Date(),
+        },
+      },
+    );
+
+    return;
+  }
 
   await usersCollection.updateOne(
     { id: userId, "transactions.id": transactionId, "transactions.status": "pending" },
