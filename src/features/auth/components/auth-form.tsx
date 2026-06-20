@@ -59,7 +59,7 @@ export function AuthForm({
               className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold outline-none transition focus:border-indigo-400 focus:bg-white focus:ring-4 focus:ring-indigo-100"
               id="name"
               name="name"
-              placeholder="Tahir Khan"
+              placeholder="Enter Your Name"
               required
               type="text"
             />
