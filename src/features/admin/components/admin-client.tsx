@@ -46,6 +46,32 @@ type AdminUser = {
   createdAt: string;
 };
 
+function transactionMatchesSearch(tx: Transaction, query: string) {
+  if (!query.trim()) {
+    return true;
+  }
+
+  const normalizedQuery = query.trim().toLowerCase();
+  const searchableText = [
+    tx.userName,
+    tx.userEmail,
+    tx.userId,
+    tx.id,
+    tx.type,
+    tx.status,
+    (tx.amountCents / 100).toFixed(2),
+    tx.depositAddress,
+    tx.withdrawAddress,
+    tx.withdrawNetwork,
+    tx.adminRemark,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+
+  return searchableText.includes(normalizedQuery);
+}
+
 export function AdminClient() {
   const [activeTab, setActiveTab] = useState<
     "overview" | "config" | "transactions" | "support" | "users"
@@ -76,6 +102,7 @@ export function AdminClient() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [txLoading, setTxLoading] = useState(true);
   const [txFilter, setTxFilter] = useState("pending");
+  const [txSearch, setTxSearch] = useState("");
   const [txRemark, setTxRemark] = useState<{ [key: string]: string }>({});
 
   // Support Tickets state
@@ -416,9 +443,11 @@ export function AdminClient() {
 
   if (!isAdmin) return null;
 
-  const filteredTransactions = transactions.filter(t => {
-    if (txFilter === "all") return true;
-    return t.status === txFilter;
+  const filteredTransactions = transactions.filter((transaction) => {
+    const matchesStatus =
+      txFilter === "all" || transaction.status === txFilter;
+
+    return matchesStatus && transactionMatchesSearch(transaction, txSearch);
   });
 
   const filteredTickets = tickets.filter(t => {
@@ -618,17 +647,48 @@ export function AdminClient() {
       {/* Tab Content: Transactions */}
       {activeTab === "transactions" && (
         <div className="space-y-6 animate-in fade-in duration-200">
-          {/* Filter buttons */}
-          <div className="flex gap-2 flex-wrap">
-            {["pending", "completed", "rejected", "all"].map((status) => (
-              <button
-                key={status}
-                onClick={() => setTxFilter(status)}
-                className={`px-4 py-2 rounded-full text-xs font-bold capitalize transition border ${txFilter === status ? "bg-indigo-600 text-white border-indigo-600" : "bg-white text-slate-500 border-slate-200 hover:bg-slate-50"}`}
-              >
-                {status}
-              </button>
-            ))}
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="w-full max-w-xl">
+              <label className="sr-only" htmlFor="tx-search">
+                Search transactions
+              </label>
+              <div className="flex rounded-2xl border border-slate-200 bg-white focus-within:border-indigo-400 focus-within:ring-4 focus-within:ring-indigo-100">
+                <span className="flex items-center pl-4 text-slate-400" aria-hidden="true">
+                  <svg className="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M10.5 18a7.5 7.5 0 100-15 7.5 7.5 0 000 15z" />
+                  </svg>
+                </span>
+                <input
+                  id="tx-search"
+                  type="search"
+                  placeholder="Search by user, email, ID, amount, or address..."
+                  value={txSearch}
+                  onChange={(event) => setTxSearch(event.target.value)}
+                  className="w-full bg-transparent px-3 py-3 text-sm font-bold text-slate-950 outline-none placeholder:font-semibold placeholder:text-slate-400"
+                />
+                {txSearch ? (
+                  <button
+                    type="button"
+                    onClick={() => setTxSearch("")}
+                    className="px-4 text-xs font-black text-slate-400 transition hover:text-slate-700"
+                  >
+                    Clear
+                  </button>
+                ) : null}
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              {["pending", "completed", "rejected", "all"].map((status) => (
+                <button
+                  key={status}
+                  onClick={() => setTxFilter(status)}
+                  className={`rounded-full border px-4 py-2 text-xs font-bold capitalize transition ${txFilter === status ? "border-indigo-600 bg-indigo-600 text-white" : "border-slate-200 bg-white text-slate-500 hover:bg-slate-50"}`}
+                >
+                  {status}
+                </button>
+              ))}
+            </div>
           </div>
 
           {txLoading && transactions.length === 0 ? (
@@ -637,7 +697,9 @@ export function AdminClient() {
             </div>
           ) : filteredTransactions.length === 0 ? (
             <div className="rounded-3xl bg-white border border-slate-200/80 p-8 text-center text-slate-500 text-sm font-bold">
-              No transactions match the selected filter.
+              {txSearch.trim()
+                ? "No transactions match your search."
+                : "No transactions match the selected filter."}
             </div>
           ) : (
             <div className="overflow-x-auto rounded-[2rem] border border-slate-200/80 bg-white shadow-sm">
