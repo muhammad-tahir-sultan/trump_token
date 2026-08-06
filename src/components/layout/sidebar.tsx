@@ -1,5 +1,6 @@
 import { logoutAction } from "@/features/auth/actions/auth-actions";
 import { APP_DOWNLOAD_URL } from "@/config/app-download";
+import { DogecoinLogo } from "@/components/ui/dogecoin-logo";
 import type { AuthenticatedUser } from "@/features/auth/types/auth";
 
 type SidebarProps = {
@@ -28,9 +29,7 @@ export function Sidebar({ user }: SidebarProps) {
     <aside className="hidden w-64 shrink-0 border-r border-slate-200/80 bg-white px-6 py-8 lg:block">
       <div className="flex h-full flex-col">
         <div className="flex items-center gap-3">
-          <div className="grid size-11 place-items-center rounded-2xl bg-indigo-600 text-lg font-black text-white">
-            D
-          </div>
+          <DogecoinLogo size={44} />
           <div>
             <p className="text-sm font-semibold text-slate-400">Dogecoin Network</p>
             <h1 className="text-lg font-black tracking-tight text-slate-950">Dogecoin</h1>

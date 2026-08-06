@@ -15,6 +15,11 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Dogecoin Dashboard",
   description: "A Dogecoin deposit and daily commission tracking platform.",
+  icons: {
+    apple: "/favicon.png",
+    icon: "/favicon.png",
+    shortcut: "/favicon.png",
+  },
 };
 
 export default function RootLayout({

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { DogecoinLogo } from "@/components/ui/dogecoin-logo";
 import { AuthSubmitButton } from "@/features/auth/components/auth-submit-button";
 
 type AuthFormProps = {
@@ -29,9 +30,7 @@ export function AuthForm({
   return (
     <div className="w-full max-w-md">
       <div className="mb-8 lg:hidden">
-        <div className="grid size-12 place-items-center rounded-2xl bg-indigo-600 text-lg font-black text-white">
-          D
-        </div>
+        <DogecoinLogo size={48} />
       </div>
 
       <p className="text-sm font-bold uppercase tracking-[0.2em] text-indigo-500">

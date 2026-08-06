@@ -1,3 +1,5 @@
+import { DogecoinLogo } from "@/components/ui/dogecoin-logo";
+
 type AuthShellProps = {
   children: React.ReactNode;
 };
@@ -9,9 +11,7 @@ export function AuthShell({ children }: AuthShellProps) {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_35%_25%,_rgba(99,102,241,0.55),_transparent_35%),radial-gradient(circle_at_80%_70%,_rgba(236,72,153,0.35),_transparent_30%)]" />
         <div className="relative z-10 flex h-full flex-col justify-between">
           <div className="flex items-center gap-3">
-            <div className="grid size-12 place-items-center rounded-2xl bg-white text-lg font-black text-indigo-600">
-              D
-            </div>
+            <DogecoinLogo size={48} />
             <div>
               <p className="text-sm font-semibold text-indigo-200">
                 Dogecoin Network
