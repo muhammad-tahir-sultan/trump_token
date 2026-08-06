@@ -35,14 +35,14 @@ export function MobileNavbar({ user }: MobileNavbarProps) {
       <header className="fixed inset-x-0 top-0 z-50 flex h-14 shrink-0 items-center justify-between border-b border-slate-200/80 bg-white/95 px-4 backdrop-blur-md lg:hidden">
         <div className="flex items-center gap-3">
           <div className="grid size-9 place-items-center rounded-xl bg-indigo-600 text-sm font-black text-white">
-            R
+            D
           </div>
           <div>
             <p className="text-[10px] font-semibold tracking-wider uppercase text-slate-400">
-              Rivochain Network
+              Dogecoin Network
             </p>
             <h1 className="text-sm font-black tracking-tight text-slate-950">
-              Rivochain
+              Dogecoin
             </h1>
           </div>
         </div>
@@ -90,14 +90,14 @@ export function MobileNavbar({ user }: MobileNavbarProps) {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="grid size-9 place-items-center rounded-xl bg-indigo-600 text-sm font-black text-white">
-                R
+                D
               </div>
               <div>
                 <p className="text-[10px] font-semibold tracking-wider uppercase text-slate-400">
-                  Rivochain Network
+                  Dogecoin Network
                 </p>
                 <h1 className="text-sm font-black tracking-tight text-slate-950">
-                  Rivochain
+                  Dogecoin
                 </h1>
               </div>
             </div>

@@ -29,11 +29,11 @@ export function Sidebar({ user }: SidebarProps) {
       <div className="flex h-full flex-col">
         <div className="flex items-center gap-3">
           <div className="grid size-11 place-items-center rounded-2xl bg-indigo-600 text-lg font-black text-white">
-            R
+            D
           </div>
           <div>
-            <p className="text-sm font-semibold text-slate-400">Rivochain Network</p>
-            <h1 className="text-lg font-black tracking-tight text-slate-950">Rivochain</h1>
+            <p className="text-sm font-semibold text-slate-400">Dogecoin Network</p>
+            <h1 className="text-lg font-black tracking-tight text-slate-950">Dogecoin</h1>
           </div>
         </div>
 

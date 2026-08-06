@@ -90,7 +90,7 @@ export async function setSupportWhatsappNumber(phoneNumber: string) {
 export function buildWhatsappUrl(phoneNumber: string, message?: string) {
   const normalized = normalizeWhatsappNumber(phoneNumber);
   const text = encodeURIComponent(
-    message ?? "Hello, I need customer support from Rivochain.",
+    message ?? "Hello, I need customer support from Dogecoin.",
   );
 
   return `https://wa.me/${normalized}?text=${text}`;

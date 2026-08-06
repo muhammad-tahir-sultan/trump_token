@@ -10,13 +10,13 @@ export function AuthShell({ children }: AuthShellProps) {
         <div className="relative z-10 flex h-full flex-col justify-between">
           <div className="flex items-center gap-3">
             <div className="grid size-12 place-items-center rounded-2xl bg-white text-lg font-black text-indigo-600">
-              R
+              D
             </div>
             <div>
               <p className="text-sm font-semibold text-indigo-200">
-                Rivochain Network
+                Dogecoin Network
               </p>
-              <h1 className="text-xl font-black">Rivochain</h1>
+              <h1 className="text-xl font-black">Dogecoin</h1>
             </div>
           </div>
 

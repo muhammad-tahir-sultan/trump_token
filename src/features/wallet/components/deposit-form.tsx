@@ -203,7 +203,7 @@ export function DepositForm({ balanceCents, level }: DepositFormProps) {
             <p className="text-xs text-slate-500 font-medium mt-1 sm:text-sm">
               {level
                 ? `Minimum ${level.minimumDepositLabel} · ${level.dailyCommissionRate}% daily on approved deposits`
-                : "Top up your Rivochain balance"}
+                : "Top up your Dogecoin balance"}
             </p>
           </div>
           <div className="bg-slate-900 rounded-[1.5rem] px-5 py-3 text-right shadow-lg">

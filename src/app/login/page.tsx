@@ -27,7 +27,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
         error={params.error}
         footerHref="/signup"
         footerLabel="Create account"
-        footerText="New to Rivochain?"
+        footerText="New to Dogecoin?"
         mode="login"
         subtitle="Welcome back. Login to access your level dashboard."
         title="Login"
