@@ -8,7 +8,26 @@ export type CommissionPreview = {
   rate: number;
 };
 
-export const DAILY_DEPOSIT_COMMISSION_RATE = 5;
+export const dailyDepositCommissionTiers = [
+  {
+    label: "$10 - $199",
+    maximumDepositCents: 199_99,
+    minimumDepositCents: 10_00,
+    rate: 2,
+  },
+  {
+    label: "$200 - $999",
+    maximumDepositCents: 999_99,
+    minimumDepositCents: 200_00,
+    rate: 3.5,
+  },
+  {
+    label: "$1,000+",
+    maximumDepositCents: null,
+    minimumDepositCents: 1_000_00,
+    rate: 5,
+  },
+] as const;
 
 export function getTodayKey(date = new Date()) {
   return date.toISOString().slice(0, 10);
@@ -20,10 +39,22 @@ export function getEligibleLevel(balanceCents: number) {
     .at(-1) ?? null;
 }
 
+export function getDailyDepositCommissionRate(totalDepositedCents: number) {
+  return (
+    dailyDepositCommissionTiers.find(
+      (tier) =>
+        totalDepositedCents >= tier.minimumDepositCents &&
+        (tier.maximumDepositCents === null ||
+          totalDepositedCents <= tier.maximumDepositCents),
+    )?.rate ?? 0
+  );
+}
+
 export function getCommissionPreview(totalDepositedCents: number): CommissionPreview {
   const eligibleLevel = getEligibleLevel(totalDepositedCents);
+  const rate = getDailyDepositCommissionRate(totalDepositedCents);
 
-  if (totalDepositedCents <= 0) {
+  if (rate <= 0) {
     return {
       amountCents: 0,
       baseAmountCents: 0,
@@ -34,10 +65,10 @@ export function getCommissionPreview(totalDepositedCents: number): CommissionPre
 
   return {
     amountCents: Math.floor(
-      (totalDepositedCents * DAILY_DEPOSIT_COMMISSION_RATE) / 100,
+      (totalDepositedCents * rate) / 100,
     ),
     baseAmountCents: totalDepositedCents,
     eligibleLevel,
-    rate: DAILY_DEPOSIT_COMMISSION_RATE,
+    rate,
   };
 }

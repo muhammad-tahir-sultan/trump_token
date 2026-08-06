@@ -204,8 +204,8 @@ export function CommissionPanelClient({
               Claim Deposit Commission
             </h2>
             <p className="mt-1 text-xs leading-5 text-slate-500 sm:mt-2 sm:text-sm sm:leading-6">
-              Daily commission is fixed at 5% of your total approved deposit
-              amount. Wallet balance growth from previous commissions is not
+              Daily commission is calculated by your total approved deposit
+              slab. Wallet balance growth from previous commissions is not
               included. Claim once per day after the deposit lock ends.
             </p>
           </div>

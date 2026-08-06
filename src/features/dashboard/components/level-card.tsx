@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { DAILY_DEPOSIT_COMMISSION_RATE } from "@/features/commission/services/commission-service";
 import type { Level } from "@/features/levels/types/level";
 
 type LevelCardProps = {
@@ -22,7 +21,7 @@ export function LevelCard({ level }: LevelCardProps) {
               {level.name}
             </p>
             <h4 className="mt-0.5 text-xl font-black sm:mt-2 sm:text-3xl">
-              {DAILY_DEPOSIT_COMMISSION_RATE}%
+              {level.dailyCommissionRate}%
             </h4>
           </div>
           <span className="shrink-0 rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-black sm:px-3 sm:py-1 sm:text-xs">

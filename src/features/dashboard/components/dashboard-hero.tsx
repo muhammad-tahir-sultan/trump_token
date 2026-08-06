@@ -1,6 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { APP_DOWNLOAD_URL } from "@/config/app-download";
-import { DAILY_DEPOSIT_COMMISSION_RATE } from "@/features/commission/services/commission-service";
+import { dailyDepositCommissionTiers } from "@/features/commission/services/commission-service";
 
 export function DashboardHero() {
   return (
@@ -10,12 +10,13 @@ export function DashboardHero() {
       <div className="relative z-10 max-w-xl">
         <Badge>Top tier level system</Badge>
         <h3 className="mt-4 text-2xl font-black leading-tight tracking-tight sm:mt-6 sm:text-4xl lg:text-5xl">
-          Deposit and earn fixed daily commission.
+          Deposit and earn tier-based daily commission.
         </h3>
         <p className="mt-4 max-w-lg text-sm leading-6 text-indigo-100 sm:text-base">
-          Start from Level 1 with a $10 minimum deposit and claim{" "}
-          {DAILY_DEPOSIT_COMMISSION_RATE}% daily on your total approved deposit
-          amount.
+          Start with a $10 minimum deposit and earn from{" "}
+          {dailyDepositCommissionTiers[0].rate}% up to{" "}
+          {dailyDepositCommissionTiers.at(-1)?.rate}% daily on your total
+          approved deposit amount.
         </p>
         <div className="mt-8 flex flex-wrap gap-3">
           <a

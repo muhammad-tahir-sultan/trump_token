@@ -1,4 +1,4 @@
-import { DAILY_DEPOSIT_COMMISSION_RATE } from "@/features/commission/services/commission-service";
+import { dailyDepositCommissionTiers } from "@/features/commission/services/commission-service";
 import type { Level } from "@/features/levels/types/level";
 
 type CommissionSummaryProps = {
@@ -14,14 +14,14 @@ export function CommissionSummary({ levels }: CommissionSummaryProps) {
         </p>
         <div className="mt-4 rounded-3xl bg-slate-950 p-5 text-white">
           <p className="text-sm font-semibold text-indigo-200">
-            Fixed Rate
+            Highest Rate
           </p>
           <h3 className="mt-2 text-4xl font-black">
-            {DAILY_DEPOSIT_COMMISSION_RATE}%
+            {dailyDepositCommissionTiers.at(-1)?.rate}%
           </h3>
           <p className="mt-2 text-sm text-slate-300">
-            Daily commission on total approved deposits. Wallet balance growth
-            is not included.
+            Daily commission is selected by total approved deposit amount.
+            Wallet balance growth is not included.
           </p>
         </div>
       </section>
@@ -44,7 +44,7 @@ export function CommissionSummary({ levels }: CommissionSummaryProps) {
                 </p>
               </div>
               <span className="rounded-full bg-slate-100 px-3 py-1 text-sm font-black text-slate-700">
-                {DAILY_DEPOSIT_COMMISSION_RATE}%
+                {level.dailyCommissionRate}%
               </span>
             </div>
           ))}
