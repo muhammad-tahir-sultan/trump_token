@@ -1,4 +1,5 @@
 import { logoutAction } from "@/features/auth/actions/auth-actions";
+import { APP_DOWNLOAD_URL } from "@/config/app-download";
 import type { AuthenticatedUser } from "@/features/auth/types/auth";
 
 type SidebarProps = {
@@ -51,6 +52,15 @@ export function Sidebar({ user }: SidebarProps) {
               {item.label}
             </a>
           ))}
+          <a
+            className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold text-emerald-600 transition hover:bg-emerald-50 hover:text-emerald-700"
+            href={APP_DOWNLOAD_URL}
+            rel="noopener noreferrer"
+            target="_blank"
+          >
+            <span className="size-2 rounded-full bg-current" />
+            Download App
+          </a>
         </nav>
 
         <form action={logoutAction} className="mt-auto">

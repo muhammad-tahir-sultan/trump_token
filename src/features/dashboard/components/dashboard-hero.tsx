@@ -1,4 +1,5 @@
 import { Badge } from "@/components/ui/badge";
+import { APP_DOWNLOAD_URL } from "@/config/app-download";
 import type { Level } from "@/features/levels/types/level";
 
 type DashboardHeroProps = {
@@ -31,6 +32,14 @@ export function DashboardHero({ level }: DashboardHeroProps) {
             href="/history"
           >
             View History
+          </a>
+          <a
+            className="rounded-2xl bg-emerald-400 px-5 py-3 text-sm font-black text-slate-950 transition hover:bg-emerald-300"
+            href={APP_DOWNLOAD_URL}
+            rel="noopener noreferrer"
+            target="_blank"
+          >
+            Download App
           </a>
         </div>
       </div>

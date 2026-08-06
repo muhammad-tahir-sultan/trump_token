@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { usePathname } from "next/navigation";
+import { APP_DOWNLOAD_URL } from "@/config/app-download";
 import type { AuthenticatedUser } from "@/features/auth/types/auth";
 
 type MobileNavbarProps = {
@@ -142,6 +143,16 @@ export function MobileNavbar({ user }: MobileNavbarProps) {
                 </Link>
               );
             })}
+            <a
+              className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold text-emerald-600 transition hover:bg-emerald-50 hover:text-emerald-700"
+              href={APP_DOWNLOAD_URL}
+              onClick={() => setIsOpen(false)}
+              rel="noopener noreferrer"
+              target="_blank"
+            >
+              <span className="size-2 rounded-full bg-current" />
+              Download App
+            </a>
           </nav>
         </div>
       </div>
