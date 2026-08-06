@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { DAILY_DEPOSIT_COMMISSION_RATE } from "@/features/commission/services/commission-service";
 import type { Level } from "@/features/levels/types/level";
 
 type LevelDetailHeroProps = {
@@ -25,11 +26,11 @@ export function LevelDetailHero({ level }: LevelDetailHeroProps) {
             </p>
             <h1 className="mt-1 text-2xl font-black sm:text-4xl">{level.name}</h1>
             <p className="mt-2 text-sm text-white/90 sm:text-base">
-              Daily commission on your wallet balance after deposit.
+              Daily commission on your total approved deposit amount.
             </p>
           </div>
           <span className="rounded-full bg-white/20 px-3 py-1 text-xs font-black">
-            {level.dailyCommissionRate}% Daily
+            {DAILY_DEPOSIT_COMMISSION_RATE}% Daily
           </span>
         </div>
 

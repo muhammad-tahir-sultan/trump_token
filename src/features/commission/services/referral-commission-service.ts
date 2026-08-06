@@ -11,24 +11,24 @@ export const COMMISSION_LOCK_MS = 24 * 60 * 60 * 1000;
 export type ReferralCommissionPreview = {
   amountCents: number;
   rate: number;
-  teamBalanceCents: number;
+  teamDepositedCents: number;
   teamMemberCount: number;
 };
 
-export function getReferralCommissionPreview(teamBalanceCents: number, teamMemberCount: number) {
-  if (teamMemberCount === 0 || teamBalanceCents <= 0) {
+export function getReferralCommissionPreview(teamDepositedCents: number, teamMemberCount: number) {
+  if (teamMemberCount === 0 || teamDepositedCents <= 0) {
     return {
       amountCents: 0,
       rate: REFERRAL_DAILY_RATE,
-      teamBalanceCents: 0,
+      teamDepositedCents: 0,
       teamMemberCount: 0,
     };
   }
 
   return {
-    amountCents: Math.floor((teamBalanceCents * REFERRAL_DAILY_RATE) / 100),
+    amountCents: Math.floor((teamDepositedCents * REFERRAL_DAILY_RATE) / 100),
     rate: REFERRAL_DAILY_RATE,
-    teamBalanceCents,
+    teamDepositedCents,
     teamMemberCount,
   };
 }

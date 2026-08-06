@@ -1,3 +1,4 @@
+import { DAILY_DEPOSIT_COMMISSION_RATE } from "@/features/commission/services/commission-service";
 import type { Level } from "@/features/levels/types/level";
 
 type CommissionSummaryProps = {
@@ -5,29 +6,28 @@ type CommissionSummaryProps = {
 };
 
 export function CommissionSummary({ levels }: CommissionSummaryProps) {
-  const highestLevel = levels[levels.length - 1];
-
   return (
     <aside className="space-y-5" id="summary">
       <section className="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm">
         <p className="text-sm font-bold uppercase tracking-[0.18em] text-slate-400">
-          Highest Tier
+          Daily Deposit Commission
         </p>
         <div className="mt-4 rounded-3xl bg-slate-950 p-5 text-white">
           <p className="text-sm font-semibold text-indigo-200">
-            {highestLevel.name}
+            Fixed Rate
           </p>
           <h3 className="mt-2 text-4xl font-black">
-            {highestLevel.dailyCommissionRate}%
+            {DAILY_DEPOSIT_COMMISSION_RATE}%
           </h3>
           <p className="mt-2 text-sm text-slate-300">
-            Daily commission after deposit {highestLevel.depositRangeLabel}.
+            Daily commission on total approved deposits. Wallet balance growth
+            is not included.
           </p>
         </div>
       </section>
 
       <section className="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm">
-        <h3 className="text-lg font-black text-slate-950">Level Ladder</h3>
+        <h3 className="text-lg font-black text-slate-950">Deposit Ladder</h3>
         <div className="mt-5 space-y-4">
           {levels.map((level) => (
             <div className="flex items-center gap-3" key={level.id}>
@@ -44,7 +44,7 @@ export function CommissionSummary({ levels }: CommissionSummaryProps) {
                 </p>
               </div>
               <span className="rounded-full bg-slate-100 px-3 py-1 text-sm font-black text-slate-700">
-                {level.dailyCommissionRate}%
+                {DAILY_DEPOSIT_COMMISSION_RATE}%
               </span>
             </div>
           ))}

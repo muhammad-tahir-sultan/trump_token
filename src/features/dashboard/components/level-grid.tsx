@@ -14,7 +14,7 @@ export function LevelGrid({ levels }: LevelGridProps) {
             Level System
           </p>
           <h3 className="mt-1 text-lg font-black tracking-tight text-slate-950 sm:mt-2 sm:text-2xl">
-            Daily Commission Tiers
+            Deposit Levels
           </h3>
         </div>
         <a className="text-xs font-black text-indigo-600 sm:text-sm" href="#summary">

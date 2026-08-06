@@ -35,7 +35,7 @@ export async function claimDailyCommissionAction() {
 
   try {
     const wallet = await getWalletSummary(user.id);
-    const preview = getCommissionPreview(wallet.balanceCents);
+    const preview = getCommissionPreview(wallet.totalDepositedCents);
     await claimDailyCommission(user.id);
 
     revalidatePath("/");

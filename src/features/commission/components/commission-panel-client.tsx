@@ -20,6 +20,7 @@ type CommissionPanelClientProps = {
   error?: string;
   preview: {
     amountCents: number;
+    baseAmountCents: number;
     eligibleLevel: { name: string } | null;
     rate: number;
   };
@@ -200,12 +201,12 @@ export function CommissionPanelClient({
               Daily Commission
             </p>
             <h2 className="mt-1 text-xl font-black tracking-tight text-slate-950 sm:mt-2 sm:text-3xl">
-              Claim Balance Commission
+              Claim Deposit Commission
             </h2>
             <p className="mt-1 text-xs leading-5 text-slate-500 sm:mt-2 sm:text-sm sm:leading-6">
-              Daily commission based on your current balance tier. After each
-              approved deposit, commission unlocks after 24 hours. Claim once per
-              day.
+              Daily commission is fixed at 5% of your total approved deposit
+              amount. Wallet balance growth from previous commissions is not
+              included. Claim once per day after the deposit lock ends.
             </p>
           </div>
           <div className="rounded-2xl bg-slate-950 px-4 py-3 text-white sm:rounded-3xl sm:px-5 sm:py-4">
@@ -241,9 +242,9 @@ export function CommissionPanelClient({
 
         <div className="mt-4 grid grid-cols-2 gap-3 sm:mt-6 sm:gap-4 lg:grid-cols-3">
           <div className="rounded-2xl bg-slate-50 p-3 sm:rounded-3xl sm:p-5">
-            <p className="text-xs font-bold text-slate-400 sm:text-sm">Eligible Level</p>
+            <p className="text-xs font-bold text-slate-400 sm:text-sm">Total Deposit</p>
             <p className="mt-1 text-lg font-black text-slate-950 sm:mt-2 sm:text-2xl">
-              {preview.eligibleLevel?.name ?? "N/A"}
+              {formatCurrency(preview.baseAmountCents)}
             </p>
           </div>
           <div className="rounded-2xl bg-indigo-50 p-3 sm:rounded-3xl sm:p-5">
@@ -287,15 +288,15 @@ export function CommissionPanelClient({
             <p className="mt-1 text-xs leading-5 text-slate-500 sm:mt-2 sm:text-sm sm:leading-6">
               When your team deposits, you earn the full level commission rate on
               the first day. From the second day onward, claim 1% daily on your
-              team&apos;s total wallet balance once per day.
+              team&apos;s total approved deposits once per day.
             </p>
           </div>
           <div className="rounded-2xl bg-emerald-950 px-4 py-3 text-white sm:rounded-3xl sm:px-5 sm:py-4">
             <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-200 sm:text-xs">
-              Team Balance
+              Team Deposits
             </p>
             <p className="mt-1 text-xl font-black sm:text-2xl">
-              {formatCurrency(referralPreview.teamBalanceCents)}
+              {formatCurrency(referralPreview.teamDepositedCents)}
             </p>
           </div>
         </div>

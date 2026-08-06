@@ -91,7 +91,13 @@ async function getUsersCollection() {
     usersCollectionPromise = getMongoDatabase().then(async (database) => {
       const collection = database.collection<WalletUserDocument>("users");
 
-      await collection.createIndex({ id: 1 }, { unique: true });
+      await collection.createIndex(
+        { id: 1 },
+        {
+          partialFilterExpression: { id: { $type: "string" } },
+          unique: true,
+        },
+      );
 
       return collection;
     });
@@ -627,8 +633,8 @@ export async function claimDailyCommission(userId: string) {
   const usersCollection = await getUsersCollection();
   const todayKey = getTodayKey();
   const user = await usersCollection.findOne({ id: userId });
-  const balanceCents = user?.balanceCents ?? 0;
-  const preview = getCommissionPreview(balanceCents);
+  const totalDepositedCents = user?.totalDepositedCents ?? 0;
+  const preview = getCommissionPreview(totalDepositedCents);
 
   if (!user || preview.amountCents <= 0) {
     throw new CommissionNotAvailableError();
@@ -653,7 +659,7 @@ export async function claimDailyCommission(userId: string) {
         preview.amountCents,
         "totalCommissionCents",
         {
-          description: `${preview.rate}% daily commission on existing balance.`,
+          description: `${preview.rate}% daily commission on total deposited amount.`,
         },
       ),
       {
@@ -672,14 +678,14 @@ export async function claimDailyCommission(userId: string) {
 export async function getReferralCommissionStatus(userId: string) {
   const usersCollection = await getUsersCollection();
   const members = await usersCollection
-    .find({ referredByUserId: userId }, { projection: { balanceCents: 1 } })
+    .find({ referredByUserId: userId }, { projection: { totalDepositedCents: 1 } })
     .toArray();
-  const teamBalanceCents = members.reduce(
-    (total, member) => total + (member.balanceCents ?? 0),
+  const teamDepositedCents = members.reduce(
+    (total, member) => total + (member.totalDepositedCents ?? 0),
     0,
   );
 
-  return getReferralCommissionPreview(teamBalanceCents, members.length);
+  return getReferralCommissionPreview(teamDepositedCents, members.length);
 }
 
 export async function claimDailyReferralCommission(userId: string) {
@@ -712,7 +718,7 @@ export async function claimDailyReferralCommission(userId: string) {
         preview.amountCents,
         "totalReferralBonusCents",
         {
-          description: `1% daily referral commission on team balance (${preview.teamMemberCount} members).`,
+          description: `1% daily referral commission on team deposits (${preview.teamMemberCount} members).`,
         },
       ),
       {

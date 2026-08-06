@@ -8,10 +8,51 @@ type TeamOverviewProps = {
   team: TeamSummary;
 };
 
+const teamRoles = [
+  {
+    name: "Leader",
+    salaryCents: 100_00,
+    requiredMembers: 20,
+    requiredDepositCents: 10_000_00,
+  },
+  {
+    name: "Manager",
+    salaryCents: 300_00,
+    requiredMembers: 50,
+    requiredDepositCents: 350_000_00,
+  },
+  {
+    name: "Senior Manager",
+    salaryCents: 500_00,
+    requiredMembers: 80,
+    requiredDepositCents: 70_000_00,
+  },
+  {
+    name: "Director",
+    salaryCents: 1_000_00,
+    requiredMembers: 150,
+    requiredDepositCents: 150_000_00,
+  },
+];
+
 function formatDate(date: Date) {
   return new Intl.DateTimeFormat("en-US", {
     dateStyle: "medium",
   }).format(new Date(date));
+}
+
+function getRoleProgress(
+  requiredMembers: number,
+  requiredDepositCents: number,
+  team: TeamSummary,
+) {
+  const memberProgress = Math.min((team.totalMembers / requiredMembers) * 100, 100);
+  const depositProgress = Math.min(
+    (team.totalDepositedCents / requiredDepositCents) * 100,
+    100,
+  );
+
+  return Math.floor(Math.min(memberProgress, depositProgress));
 }
 
 export function TeamOverview({ referralCode, team }: TeamOverviewProps) {
@@ -87,6 +128,106 @@ export function TeamOverview({ referralCode, team }: TeamOverviewProps) {
               value={item.value}
             />
           ))}
+        </div>
+      </section>
+
+      <section className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm sm:rounded-[2rem] sm:p-6">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-600 sm:text-sm">
+              Team Roles
+            </p>
+            <h3 className="mt-1 text-xl font-black tracking-tight text-slate-950 sm:text-2xl">
+              Role Salary Progress
+            </h3>
+          </div>
+          <p className="text-xs font-bold text-slate-500 sm:text-sm">
+            Team deposit: {formatCurrency(team.totalDepositedCents)}
+          </p>
+        </div>
+
+        <div className="mt-5 grid gap-4 lg:grid-cols-2">
+          {teamRoles.map((role) => {
+            const progress = getRoleProgress(
+              role.requiredMembers,
+              role.requiredDepositCents,
+              team,
+            );
+            const remainingDepositCents = Math.max(
+              role.requiredDepositCents - team.totalDepositedCents,
+              0,
+            );
+            const remainingMembers = Math.max(
+              role.requiredMembers - team.totalMembers,
+              0,
+            );
+            const achieved = progress === 100;
+
+            return (
+              <article
+                className="rounded-2xl border border-slate-200 bg-slate-50 p-4"
+                key={role.name}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-lg font-black text-slate-950">{role.name}</p>
+                    <p className="mt-1 text-sm font-bold text-emerald-700">
+                      {formatCurrency(role.salaryCents)} salary per month
+                    </p>
+                  </div>
+                  <span
+                    className={`rounded-full px-3 py-1 text-xs font-black ${
+                      achieved
+                        ? "bg-emerald-100 text-emerald-700"
+                        : "bg-white text-slate-500"
+                    }`}
+                  >
+                    {achieved ? "Unlocked" : `${progress}%`}
+                  </span>
+                </div>
+
+                <div className="mt-4 h-3 overflow-hidden rounded-full bg-white">
+                  <div
+                    className="h-full rounded-full bg-emerald-500 transition-all"
+                    style={{ width: `${progress}%` }}
+                  />
+                </div>
+
+                <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <p className="font-bold text-slate-400">Required Team</p>
+                    <p className="mt-1 font-black text-slate-950">
+                      {role.requiredMembers} persons
+                    </p>
+                  </div>
+                  <div>
+                    <p className="font-bold text-slate-400">Remaining Team</p>
+                    <p className="mt-1 font-black text-slate-950">
+                      {remainingMembers} persons
+                    </p>
+                  </div>
+                  <div>
+                    <p className="font-bold text-slate-400">Current Amount</p>
+                    <p className="mt-1 font-black text-slate-950">
+                      {formatCurrency(team.totalDepositedCents)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="font-bold text-slate-400">Total Required</p>
+                    <p className="mt-1 font-black text-slate-950">
+                      {formatCurrency(role.requiredDepositCents)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="font-bold text-slate-400">Remaining Amount</p>
+                    <p className="mt-1 font-black text-slate-950">
+                      {formatCurrency(remainingDepositCents)}
+                    </p>
+                  </div>
+                </div>
+              </article>
+            );
+          })}
         </div>
       </section>
 

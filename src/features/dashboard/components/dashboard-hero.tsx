@@ -1,12 +1,8 @@
 import { Badge } from "@/components/ui/badge";
 import { APP_DOWNLOAD_URL } from "@/config/app-download";
-import type { Level } from "@/features/levels/types/level";
+import { DAILY_DEPOSIT_COMMISSION_RATE } from "@/features/commission/services/commission-service";
 
-type DashboardHeroProps = {
-  level: Level;
-};
-
-export function DashboardHero({ level }: DashboardHeroProps) {
+export function DashboardHero() {
   return (
     <section className="relative overflow-hidden rounded-2xl bg-slate-950 p-4 text-white shadow-xl shadow-indigo-950/20 sm:rounded-[2rem] sm:p-8">
       <div className="absolute inset-y-0 right-0 hidden w-1/2 bg-[radial-gradient(circle_at_center,_rgba(129,140,248,0.55),_transparent_55%)] md:block" />
@@ -14,11 +10,12 @@ export function DashboardHero({ level }: DashboardHeroProps) {
       <div className="relative z-10 max-w-xl">
         <Badge>Top tier level system</Badge>
         <h3 className="mt-4 text-2xl font-black leading-tight tracking-tight sm:mt-6 sm:text-4xl lg:text-5xl">
-          Deposit, unlock levels, and earn daily commission.
+          Deposit and earn fixed daily commission.
         </h3>
         <p className="mt-4 max-w-lg text-sm leading-6 text-indigo-100 sm:text-base">
-          Start from Level 1 with a $10 minimum deposit and scale up to{" "}
-          {level.dailyCommissionRate}% daily commission on the premium tier.
+          Start from Level 1 with a $10 minimum deposit and claim{" "}
+          {DAILY_DEPOSIT_COMMISSION_RATE}% daily on your total approved deposit
+          amount.
         </p>
         <div className="mt-8 flex flex-wrap gap-3">
           <a

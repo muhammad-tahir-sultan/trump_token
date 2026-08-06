@@ -7,6 +7,7 @@ type CommissionPanelProps = {
   error?: string;
   preview: {
     amountCents: number;
+    baseAmountCents: number;
     eligibleLevel: {
       name: string;
     } | null;
@@ -33,12 +34,12 @@ export function CommissionPanel({
             Daily Commission
           </p>
           <h2 className="mt-2 text-3xl font-black tracking-tight text-slate-950">
-            Claim Existing Balance Commission
+            Claim Deposit Commission
           </h2>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
-            Daily commission is calculated based on your current wallet balance
-            tier. After each approved deposit, commission unlocks after 24 hours.
-            You can claim commission once per day.
+            Daily commission is fixed at 5% of your total approved deposit
+            amount. Wallet balance growth from previous commissions is not
+            included. You can claim commission once per day.
           </p>
         </div>
         <div className="rounded-3xl bg-slate-950 px-5 py-4 text-white">
@@ -64,9 +65,9 @@ export function CommissionPanel({
 
       <div className="mt-6 grid gap-4 sm:grid-cols-3">
         <div className="rounded-3xl bg-slate-50 p-5">
-          <p className="text-sm font-bold text-slate-400">Eligible Level</p>
+          <p className="text-sm font-bold text-slate-400">Total Deposit</p>
           <p className="mt-2 text-2xl font-black text-slate-950">
-            {preview.eligibleLevel?.name ?? "Not eligible"}
+            {formatCurrency(preview.baseAmountCents)}
           </p>
         </div>
         <div className="rounded-3xl bg-indigo-50 p-5">

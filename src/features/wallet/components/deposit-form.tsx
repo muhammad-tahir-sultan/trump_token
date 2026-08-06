@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { DAILY_DEPOSIT_COMMISSION_RATE } from "@/features/commission/services/commission-service";
 import { formatCurrency } from "@/features/wallet/services/currency";
 import { getQuickAmountsForLevel } from "@/features/levels/services/level-service";
 import type { Level } from "@/features/levels/types/level";
@@ -202,7 +203,7 @@ export function DepositForm({ balanceCents, level }: DepositFormProps) {
             </h2>
             <p className="text-xs text-slate-500 font-medium mt-1 sm:text-sm">
               {level
-                ? `Minimum ${level.minimumDepositLabel} · ${level.dailyCommissionRate}% daily commission`
+                ? `Minimum ${level.minimumDepositLabel} · ${DAILY_DEPOSIT_COMMISSION_RATE}% daily on approved deposits`
                 : "Top up your Rivochain balance"}
             </p>
           </div>

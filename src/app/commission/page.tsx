@@ -31,7 +31,7 @@ export default async function CommissionPage({
     searchParams,
     getReferralCommissionStatus(user.id),
   ]);
-  const preview = getCommissionPreview(wallet.balanceCents);
+  const preview = getCommissionPreview(wallet.totalDepositedCents);
 
   return (
     <DashboardShell>
