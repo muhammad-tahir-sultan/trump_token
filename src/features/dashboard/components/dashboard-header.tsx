@@ -16,7 +16,7 @@ function getInitials(name: string) {
 
 export function DashboardHeader({ user }: DashboardHeaderProps) {
   return (
-    <header className="border-b border-slate-200/80 bg-white px-3 py-4 sm:px-5 sm:py-5 lg:px-8">
+    <header className="border-b border-slate-800 bg-slate-950 px-3 py-4 sm:px-5 sm:py-5 lg:px-8">
       <div className="lg:flex lg:items-center lg:justify-between">
         <div>
           <p className="text-xs font-semibold text-slate-400 sm:text-sm">

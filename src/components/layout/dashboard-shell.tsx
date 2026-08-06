@@ -11,8 +11,8 @@ export async function DashboardShell({ children }: DashboardShellProps) {
   const user = await getCurrentUser();
 
   return (
-    <div className="min-h-screen bg-slate-100 text-slate-950">
-      <div className="mx-auto flex min-h-screen max-w-7xl overflow-hidden bg-slate-50 shadow-2xl shadow-slate-300/30 lg:my-8 lg:min-h-[calc(100vh-4rem)] lg:rounded-[2rem]">
+    <div className="min-h-screen bg-slate-950 text-slate-50">
+      <div className="mx-auto flex min-h-screen max-w-7xl overflow-hidden bg-slate-900 shadow-2xl shadow-black/40 lg:my-8 lg:min-h-[calc(100vh-4rem)] lg:rounded-[2rem]">
         <Sidebar user={user} />
         <div className="flex flex-1 flex-col overflow-hidden">
           <MobileNavbar user={user} />

@@ -6,7 +6,7 @@ type AuthShellProps = {
 
 export function AuthShell({ children }: AuthShellProps) {
   return (
-    <main className="grid min-h-screen bg-slate-100 p-4 text-slate-950 lg:grid-cols-[1fr_520px] lg:p-8">
+    <main className="grid min-h-screen bg-slate-950 p-4 text-slate-50 lg:grid-cols-[1fr_520px] lg:p-8">
       <section className="relative hidden overflow-hidden rounded-l-[2rem] bg-slate-950 p-10 text-white lg:block">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_35%_25%,_rgba(99,102,241,0.55),_transparent_35%),radial-gradient(circle_at_80%_70%,_rgba(236,72,153,0.35),_transparent_30%)]" />
         <div className="relative z-10 flex h-full flex-col justify-between">
@@ -35,7 +35,7 @@ export function AuthShell({ children }: AuthShellProps) {
         </div>
       </section>
 
-      <section className="grid place-items-center rounded-[2rem] bg-white px-5 py-10 shadow-2xl shadow-slate-300/40 lg:rounded-l-none">
+      <section className="grid place-items-center rounded-[2rem] bg-slate-900 px-5 py-10 shadow-2xl shadow-black/40 lg:rounded-l-none">
         {children}
       </section>
     </main>

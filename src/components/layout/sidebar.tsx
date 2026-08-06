@@ -1,6 +1,9 @@
+"use client";
+
 import { logoutAction } from "@/features/auth/actions/auth-actions";
 import { APP_DOWNLOAD_URL } from "@/config/app-download";
 import { DogecoinLogo } from "@/components/ui/dogecoin-logo";
+import { usePathname } from "next/navigation";
 import type { AuthenticatedUser } from "@/features/auth/types/auth";
 
 type SidebarProps = {
@@ -19,6 +22,7 @@ const navigationItems = [
 ];
 
 export function Sidebar({ user }: SidebarProps) {
+  const pathname = usePathname();
   const items = [...navigationItems];
 
   if (user?.role === "admin") {
@@ -26,7 +30,7 @@ export function Sidebar({ user }: SidebarProps) {
   }
 
   return (
-    <aside className="hidden w-64 shrink-0 border-r border-slate-200/80 bg-white px-6 py-8 lg:block">
+    <aside className="hidden w-64 shrink-0 border-r border-slate-800 bg-slate-950 px-6 py-8 lg:block">
       <div className="flex h-full flex-col">
         <div className="flex items-center gap-3">
           <DogecoinLogo size={44} />
@@ -37,20 +41,27 @@ export function Sidebar({ user }: SidebarProps) {
         </div>
 
         <nav className="mt-10 space-y-2" aria-label="Main navigation">
-          {items.map((item, index) => (
-            <a
-              className={`flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold transition ${
-                index === 0
-                  ? "bg-indigo-50 text-indigo-700"
-                  : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
-              }`}
-              href={item.href}
-              key={item.href}
-            >
-              <span className="size-2 rounded-full bg-current" />
-              {item.label}
-            </a>
-          ))}
+          {items.map((item) => {
+            const isActive =
+              item.href === "/"
+                ? pathname === "/"
+                : pathname === item.href || pathname.startsWith(`${item.href}/`);
+
+            return (
+              <a
+                className={`flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold transition ${
+                  isActive
+                    ? "bg-indigo-50 text-indigo-700"
+                    : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+                }`}
+                href={item.href}
+                key={item.href}
+              >
+                <span className="size-2 rounded-full bg-current" />
+                {item.label}
+              </a>
+            );
+          })}
           <a
             className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold text-emerald-600 transition hover:bg-emerald-50 hover:text-emerald-700"
             href={APP_DOWNLOAD_URL}

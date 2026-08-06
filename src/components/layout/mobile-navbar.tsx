@@ -33,7 +33,7 @@ export function MobileNavbar({ user }: MobileNavbarProps) {
   return (
     <>
       {/* Mobile Top Navbar Header */}
-      <header className="fixed inset-x-0 top-0 z-50 flex h-14 shrink-0 items-center justify-between border-b border-slate-200/80 bg-white/95 px-4 backdrop-blur-md lg:hidden">
+      <header className="fixed inset-x-0 top-0 z-50 flex h-14 shrink-0 items-center justify-between border-b border-slate-800 bg-slate-950/95 px-4 backdrop-blur-md lg:hidden">
         <div className="flex items-center gap-3">
           <DogecoinLogo size={36} />
           <div>
@@ -81,7 +81,7 @@ export function MobileNavbar({ user }: MobileNavbarProps) {
 
         {/* Sliding Menu Panel */}
         <div
-          className={`absolute inset-x-0 top-0 flex flex-col bg-white px-6 py-6 shadow-2xl rounded-b-[2rem] border-b border-slate-200/80 transition-all duration-300 ease-out transform ${
+          className={`absolute inset-x-0 top-0 flex flex-col bg-slate-950 px-6 py-6 shadow-2xl rounded-b-[2rem] border-b border-slate-800 transition-all duration-300 ease-out transform ${
             isOpen ? "translate-y-0" : "-translate-y-full"
           }`}
         >
