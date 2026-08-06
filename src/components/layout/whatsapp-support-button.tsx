@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 
+const WHATSAPP_GROUP_URL = "https://chat.whatsapp.com/DFdYgrvN2Dd75WsMNYjX95?s=sh&p=a&ilr=0";
+
 export function WhatsappSupportButton() {
   const [whatsappUrl, setWhatsappUrl] = useState("");
 
@@ -16,19 +18,19 @@ export function WhatsappSupportButton() {
           setWhatsappUrl(data.whatsappUrl);
         }
       } catch {
-        // Ignore — button stays hidden until configured.
+        setWhatsappUrl(WHATSAPP_GROUP_URL);
       }
     };
 
     loadWhatsappSupport();
   }, []);
 
-  if (!whatsappUrl) return null;
+  const displayUrl = whatsappUrl || WHATSAPP_GROUP_URL;
 
   return (
     <a
       className="fixed bottom-5 right-4 z-40 flex max-w-[calc(100vw-2rem)] items-center gap-2 rounded-full bg-[#25D366] px-4 py-3 text-xs font-black text-white shadow-xl shadow-emerald-500/30 transition hover:bg-[#1ebe5d] active:scale-95 sm:bottom-6 sm:right-6 sm:px-5 sm:text-sm"
-      href={whatsappUrl}
+      href={displayUrl}
       rel="noopener noreferrer"
       target="_blank"
     >
