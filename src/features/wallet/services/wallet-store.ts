@@ -365,7 +365,7 @@ async function applyReferralBonus(
       ),
       {
         $set: {
-          // Enforce: daily (1%) referral commission starts from next day.
+          // Enforce: daily (0.5%) referral commission starts from next day.
           lastReferralCommissionClaimedDate: todayKey,
         },
       },
@@ -718,7 +718,7 @@ export async function claimDailyReferralCommission(userId: string) {
         preview.amountCents,
         "totalReferralBonusCents",
         {
-          description: `1% daily referral commission on team deposits (${preview.teamMemberCount} members).`,
+          description: `0.5% daily referral commission on team deposits (${preview.teamMemberCount} members).`,
         },
       ),
       {

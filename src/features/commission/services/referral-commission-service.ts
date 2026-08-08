@@ -5,7 +5,7 @@ import {
   isReferralTeamTransaction,
 } from "@/features/team/services/team-stats-utils";
 
-export const REFERRAL_DAILY_RATE = 1;
+export const REFERRAL_DAILY_RATE = 0.5;
 export const COMMISSION_LOCK_MS = 24 * 60 * 60 * 1000;
 
 export type ReferralCommissionPreview = {
