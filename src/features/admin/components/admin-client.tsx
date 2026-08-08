@@ -104,12 +104,14 @@ export function AdminClient() {
   const [txFilter, setTxFilter] = useState("pending");
   const [txSearch, setTxSearch] = useState("");
   const [txRemark, setTxRemark] = useState<{ [key: string]: string }>({});
+  const [processingTxId, setProcessingTxId] = useState<string | null>(null);
 
   // Support Tickets state
   const [tickets, setTickets] = useState<CSRequest[]>([]);
   const [ticketsLoading, setTicketsLoading] = useState(true);
   const [ticketFilter, setTicketFilter] = useState("OPEN");
   const [ticketRemark, setTicketRemark] = useState<{ [key: string]: string }>({});
+  const [processingTicketId, setProcessingTicketId] = useState<string | null>(null);
 
   // Users state
   const [users, setUsers] = useState<AdminUser[]>([]);
@@ -369,6 +371,10 @@ export function AdminClient() {
       return;
     }
 
+    if (processingTxId === tx.id) return;
+
+    setProcessingTxId(tx.id);
+
     try {
       const res = await fetch("/api/admin/transactions", {
         method: "POST",
@@ -394,12 +400,18 @@ export function AdminClient() {
       }
     } catch (err: any) {
       alert("Error processing transaction request.");
+    } finally {
+      setProcessingTxId(null);
     }
   };
 
   // Handle support ticket resolution/rejection
   const handleTicketAudit = async (status: "RESOLVED" | "REJECTED", ticket: CSRequest) => {
     const remark = ticketRemark[ticket.id] || "";
+
+    if (processingTicketId === ticket.id) return;
+
+    setProcessingTicketId(ticket.id);
 
     try {
       const res = await fetch("/api/admin/cs-requests", {
@@ -425,6 +437,8 @@ export function AdminClient() {
       }
     } catch (err: any) {
       alert("Error resolving support request.");
+    } finally {
+      setProcessingTicketId(null);
     }
   };
 
@@ -789,13 +803,25 @@ export function AdminClient() {
                               <div className="flex gap-2">
                                 <button
                                   onClick={() => handleTransactionAudit("approve", tx)}
-                                  className="flex-1 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs py-1.5 transition"
+                                  disabled={processingTxId === tx.id}
+                                  className="flex-1 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs py-1.5 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1"
                                 >
-                                  Approve
+                                  {processingTxId === tx.id ? (
+                                    <>
+                                      <svg className="animate-spin h-3 w-3 text-white" fill="none" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                                      </svg>
+                                      <span>Processing...</span>
+                                    </>
+                                  ) : (
+                                    "Approve"
+                                  )}
                                 </button>
                                 <button
                                   onClick={() => handleTransactionAudit("reject", tx)}
-                                  className="flex-1 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-xs py-1.5 transition"
+                                  disabled={processingTxId === tx.id}
+                                  className="flex-1 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-xs py-1.5 transition disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                   Reject
                                 </button>
@@ -895,13 +921,25 @@ export function AdminClient() {
                         <div className="flex gap-2">
                           <button
                             onClick={() => handleTicketAudit("RESOLVED", ticket)}
-                            className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs px-4 py-2 transition"
+                            disabled={processingTicketId === ticket.id}
+                            className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs px-4 py-2 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
                           >
-                            Mark Resolved
+                            {processingTicketId === ticket.id ? (
+                              <>
+                                <svg className="animate-spin h-3 w-3 text-white" fill="none" viewBox="0 0 24 24">
+                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                                </svg>
+                                <span>Processing...</span>
+                              </>
+                            ) : (
+                              "Mark Resolved"
+                            )}
                           </button>
                           <button
                             onClick={() => handleTicketAudit("REJECTED", ticket)}
-                            className="rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-xs px-4 py-2 transition"
+                            disabled={processingTicketId === ticket.id}
+                            className="rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-xs px-4 py-2 transition disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             Reject Ticket
                           </button>
