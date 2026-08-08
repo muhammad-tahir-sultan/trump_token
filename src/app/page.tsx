@@ -4,6 +4,7 @@ import { DashboardContent } from "@/features/dashboard/components/dashboard-cont
 import { getCurrentUser } from "@/features/auth/services/session-service";
 import { backendGet } from "@/features/auth/services/backend-api-client";
 import { getTodayKey } from "@/features/commission/services/commission-service";
+import { getWalletSummary } from "@/features/wallet/services/wallet-api";
 
 export default async function Home() {
   const user = await getCurrentUser();
@@ -12,8 +13,8 @@ export default async function Home() {
     redirect("/login");
   }
 
-  const [dashboard, team] = await Promise.all([
-    backendGet("/users/dashboard"),
+  const [wallet, team] = await Promise.all([
+    getWalletSummary(),
     backendGet("/users/team"),
   ]);
 
@@ -33,7 +34,7 @@ export default async function Home() {
         referralPreview={team?.referralPreview ?? emptyReferralPreview}
         todayTeamCommissionCents={todayTeamCommissionCents}
         user={user}
-        wallet={dashboard?.wallet ?? {}}
+        wallet={wallet}
       />
     </DashboardShell>
   );
