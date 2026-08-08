@@ -13,19 +13,19 @@ export const dailyDepositCommissionTiers = [
     label: "$10 - $199",
     maximumDepositCents: 199_99,
     minimumDepositCents: 10_00,
-    rate: 0.5,
+    rate: 2,
   },
   {
     label: "$200 - $999",
     maximumDepositCents: 999_99,
     minimumDepositCents: 200_00,
-    rate: 0.5,
+    rate: 3.5,
   },
   {
     label: "$1,000+",
     maximumDepositCents: null,
     minimumDepositCents: 1_000_00,
-    rate: 0.5,
+    rate: 5,
   },
 ] as const;
 
