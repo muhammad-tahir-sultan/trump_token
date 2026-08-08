@@ -52,14 +52,7 @@ export async function POST(request: Request) {
       if (!depositAddress) {
         return NextResponse.json({ error: "Deposit address is required" }, { status: 400 });
       }
-      const transactionId = await depositToWallet(user.id, amountCents, depositAddress);
-
-      if (screenshotUrl && transactionId) {
-        const uploadRes = await backendRequest("/upload", {
-          method: "POST",
-          body: JSON.stringify({ transactionId, screenshotUrl }),
-        });
-      }
+      const transactionId = await depositToWallet(user.id, amountCents, depositAddress, screenshotUrl);
 
       return NextResponse.json({ success: true, transactionId });
     }

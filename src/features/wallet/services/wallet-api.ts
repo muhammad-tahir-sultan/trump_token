@@ -55,7 +55,7 @@ export async function getTransactionHistory(_userId?: string): Promise<WalletTra
   }));
 }
 
-export async function depositToWallet(_userId?: string, amountCents?: number, depositAddress?: string) {
+export async function depositToWallet(_userId?: string, amountCents?: number, depositAddress?: string, paymentScreenshotUrl?: string) {
   if (amountCents === undefined || !depositAddress) {
     throw new Error("Amount and deposit address are required.");
   }
@@ -63,6 +63,7 @@ export async function depositToWallet(_userId?: string, amountCents?: number, de
   const data = await backendPost("/transactions/deposit", {
     amount: amountCents / 100,
     depositAddress,
+    paymentScreenshotUrl,
   });
 
   return data.transactionId;
