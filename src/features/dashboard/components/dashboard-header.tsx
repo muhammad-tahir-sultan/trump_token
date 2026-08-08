@@ -5,8 +5,9 @@ type DashboardHeaderProps = {
   user: AuthenticatedUser;
 };
 
-function getInitials(name: string) {
-  return name
+function getInitials(name: string | undefined) {
+  const safeName = name ?? "";
+  return safeName
     .split(" ")
     .map((part) => part[0])
     .join("")

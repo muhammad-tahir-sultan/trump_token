@@ -6,7 +6,7 @@ const BACKEND_API_URL = process.env.BACKEND_API_URL ?? "http://localhost:5000/ap
 export async function GET() {
   const token = await getSessionToken();
 
-  const res = await fetch(`${BACKEND_API_URL}/deposit/address`, {
+  const res = await fetch(`${BACKEND_API_URL}/transactions/deposit/address`, {
     headers: {
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },

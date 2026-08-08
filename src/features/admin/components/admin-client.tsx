@@ -114,6 +114,7 @@ export function AdminClient() {
   // Users state
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [usersLoading, setUsersLoading] = useState(true);
+  const [userSearch, setUserSearch] = useState("");
 
   // Load and check user session role
   useEffect(() => {
@@ -453,6 +454,26 @@ export function AdminClient() {
   const filteredTickets = tickets.filter(t => {
     if (ticketFilter === "all") return true;
     return t.status === ticketFilter;
+  });
+
+  const filteredUsers = users.filter((user) => {
+    if (!userSearch.trim()) return true;
+    const query = userSearch.trim().toLowerCase();
+    const searchableText = [
+      user.name,
+      user.email,
+      user.id,
+      user.referralCode,
+      user.role,
+      (user.balanceCents / 100).toFixed(2),
+      (user.totalDepositedCents / 100).toFixed(2),
+      (user.totalWithdrawnCents / 100).toFixed(2),
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
+
+    return searchableText.includes(query);
   });
 
   return (
@@ -900,16 +921,46 @@ export function AdminClient() {
       {/* Tab Content: Users Management */}
       {activeTab === "users" && (
         <div className="space-y-4 animate-in fade-in duration-200 sm:space-y-6">
+          <div className="w-full max-w-xl">
+            <label className="sr-only" htmlFor="user-search">
+              Search users
+            </label>
+            <div className="flex rounded-2xl border border-slate-200 bg-white focus-within:border-indigo-400 focus-within:ring-4 focus-within:ring-indigo-100">
+              <span className="flex items-center pl-4 text-slate-400" aria-hidden="true">
+                <svg className="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M10.5 18a7.5 7.5 0 100-15 7.5 7.5 0 000 15z" />
+                </svg>
+              </span>
+              <input
+                id="user-search"
+                type="search"
+                placeholder="Search by name, email, ID, referral code, or role..."
+                value={userSearch}
+                onChange={(event) => setUserSearch(event.target.value)}
+                className="w-full bg-transparent px-3 py-3 text-sm font-bold text-slate-950 outline-none placeholder:font-semibold placeholder:text-slate-400"
+              />
+              {userSearch ? (
+                <button
+                  type="button"
+                  onClick={() => setUserSearch("")}
+                  className="px-4 text-xs font-black text-slate-400 transition hover:text-slate-700"
+                >
+                  Clear
+                </button>
+              ) : null}
+            </div>
+          </div>
+
           {usersLoading && users.length === 0 ? (
             <div className="rounded-2xl border border-slate-200/80 bg-white p-6 text-center text-xs font-bold text-slate-500 sm:rounded-3xl sm:p-8 sm:text-sm">
               Loading users...
             </div>
-          ) : users.length === 0 ? (
+          ) : filteredUsers.length === 0 ? (
             <div className="rounded-2xl border border-slate-200/80 bg-white p-6 text-center text-xs font-bold text-slate-500 sm:rounded-3xl sm:p-8 sm:text-sm">
-              No users found.
+              {userSearch.trim() ? "No users match your search." : "No users found."}
             </div>
           ) : (
-            <AdminUsersPanel users={users} onRefresh={fetchUsers} />
+            <AdminUsersPanel users={filteredUsers} onRefresh={fetchUsers} />
           )}
         </div>
       )}

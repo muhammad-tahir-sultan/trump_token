@@ -55,7 +55,7 @@ export async function POST(request: Request) {
       const transactionId = await depositToWallet(user.id, amountCents, depositAddress);
 
       if (screenshotUrl && transactionId) {
-        const uploadRes = await backendRequest("/upload/payment-screenshot", {
+        const uploadRes = await backendRequest("/upload", {
           method: "POST",
           body: JSON.stringify({ transactionId, screenshotUrl }),
         });

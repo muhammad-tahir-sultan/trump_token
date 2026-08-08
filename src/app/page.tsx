@@ -13,17 +13,24 @@ export default async function Home() {
   }
 
   const [dashboard, team] = await Promise.all([
-    backendGet("/dashboard"),
-    backendGet("/team"),
+    backendGet("/users/dashboard"),
+    backendGet("/users/team"),
   ]);
 
   const todayKey = getTodayKey();
   const todayTeamCommissionCents = (team?.todayTeamCommissionCents ?? 0);
 
+  const emptyReferralPreview = {
+    amountCents: 0,
+    teamDepositedCents: 0,
+    teamMemberCount: 0,
+    rate: 0.5,
+  };
+
   return (
     <DashboardShell>
       <DashboardContent
-        referralPreview={team?.referralPreview ?? null}
+        referralPreview={team?.referralPreview ?? emptyReferralPreview}
         todayTeamCommissionCents={todayTeamCommissionCents}
         user={user}
         wallet={dashboard?.wallet ?? {}}

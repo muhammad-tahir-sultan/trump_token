@@ -9,27 +9,33 @@ export class InsufficientBalanceError extends Error {
 }
 
 export async function getWalletSummary(_userId?: string): Promise<WalletSummary> {
-  const data = await backendGet("/dashboard");
+  const data = await backendGet("/users/dashboard");
+
+  const availableBalance = Number(data?.wallet?.availableBalance) || 0;
+  const totalDeposited = Number(data?.wallet?.totalDeposited) || 0;
+  const totalWithdrawn = Number(data?.wallet?.totalWithdrawn) || 0;
+  const todayDailyCommission = Number(data?.wallet?.todayDailyCommission) || 0;
+  const totalTeamCommission = Number(data?.wallet?.totalTeamCommission) || 0;
 
   return {
-    balanceCents: Math.round((data.wallet?.availableBalance ?? 0) * 100),
+    balanceCents: Math.round(availableBalance * 100),
     commissionUnlockAt: null,
     lastCommissionClaimedDate: null,
     lastReferralCommissionClaimedDate: null,
-    totalCommissionCents: Math.round((data.wallet?.todayDailyCommission ?? 0) * 100),
-    totalDepositedCents: Math.round((data.wallet?.totalDeposited ?? 0) * 100),
-    totalReferralBonusCents: Math.round((data.wallet?.totalTeamCommission ?? 0) * 100),
-    totalWithdrawnCents: Math.round((data.wallet?.totalWithdrawn ?? 0) * 100),
+    totalCommissionCents: Math.round(todayDailyCommission * 100),
+    totalDepositedCents: Math.round(totalDeposited * 100),
+    totalReferralBonusCents: Math.round(totalTeamCommission * 100),
+    totalWithdrawnCents: Math.round(totalWithdrawn * 100),
     transactions: [],
   };
 }
 
 export async function getGlobalDepositAddress() {
-  return backendGet("/deposit/address");
+  return backendGet("/transactions/deposit/address");
 }
 
 export async function getTransactionHistory(_userId?: string): Promise<WalletTransaction[]> {
-  const data = await backendGet("/history");
+  const data = await backendGet("/transactions/history");
 
   return (data ?? []).map((tx: any) => ({
     id: tx._id,
@@ -54,7 +60,7 @@ export async function depositToWallet(_userId?: string, amountCents?: number, de
     throw new Error("Amount and deposit address are required.");
   }
 
-  const data = await backendPost("/deposit", {
+  const data = await backendPost("/transactions/deposit", {
     amount: amountCents / 100,
     depositAddress,
   });
@@ -67,7 +73,7 @@ export async function withdrawFromWallet(_userId?: string, amountCents?: number,
     throw new Error("Amount, withdraw address, and network are required.");
   }
 
-  const data = await backendPost("/withdraw", {
+  const data = await backendPost("/transactions/withdraw", {
     amount: amountCents / 100,
     withdrawAddress,
     network,
@@ -77,11 +83,11 @@ export async function withdrawFromWallet(_userId?: string, amountCents?: number,
 }
 
 export async function claimDailyCommission(_userId?: string) {
-  return backendPost("/commission/claim", { type: "daily" });
+  return backendPost("/transactions/commission/claim", { type: "daily" });
 }
 
 export async function getReferralCommissionStatus(_userId?: string) {
-  const data = await backendGet("/team");
+  const data = await backendGet("/users/team");
 
   const teamDepositedCents = Math.round((data.stats?.teamDeposits ?? 0) * 100);
   const teamMemberCount = data.stats?.totalMembers ?? 0;
@@ -96,5 +102,5 @@ export async function getReferralCommissionStatus(_userId?: string) {
 }
 
 export async function claimDailyReferralCommission(_userId?: string) {
-  return backendPost("/commission/claim", { type: "referral" });
+  return backendPost("/transactions/commission/claim", { type: "referral" });
 }

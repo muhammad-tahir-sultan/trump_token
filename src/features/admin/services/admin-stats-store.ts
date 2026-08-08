@@ -1,22 +1,4 @@
-import type { Collection } from "mongodb";
-import { getTodayKey } from "@/features/commission/services/commission-service";
-import {
-  getTransactionDayKey,
-  isReferralTeamTransaction,
-} from "@/features/team/services/team-stats-utils";
-import { getMongoDatabase } from "@/features/auth/services/mongodb-client";
-import type { WalletTransaction } from "@/features/wallet/types/wallet";
-
-type StatsUserDocument = {
-  id: string;
-  role?: "admin" | "user";
-  balanceCents?: number;
-  totalDepositedCents?: number;
-  totalWithdrawnCents?: number;
-  totalCommissionCents?: number;
-  totalReferralBonusCents?: number;
-  transactions?: WalletTransaction[];
-};
+import { backendGet } from "@/features/auth/services/backend-api-client";
 
 export type AdminPlatformStats = {
   totalUsersCount: number;
@@ -36,151 +18,24 @@ export type AdminPlatformStats = {
   pendingWithdrawalsCents: number;
 };
 
-let usersCollectionPromise: Promise<Collection<StatsUserDocument>> | null = null;
-
-async function getUsersCollection() {
-  if (!usersCollectionPromise) {
-    usersCollectionPromise = getMongoDatabase().then((database) =>
-      database.collection<StatsUserDocument>("users"),
-    );
-  }
-
-  return usersCollectionPromise;
-}
-
-function sumTodayCompletedTransactions(
-  transactions: WalletTransaction[] | undefined,
-  type: WalletTransaction["type"],
-  todayKey: string,
-) {
-  return (transactions ?? [])
-    .filter(
-      (transaction) =>
-        transaction.type === type &&
-        transaction.status === "completed" &&
-        getTransactionDayKey(transaction.createdAt) === todayKey,
-    )
-    .reduce((total, transaction) => total + transaction.amountCents, 0);
-}
-
-function countPendingTransactions(
-  transactions: WalletTransaction[] | undefined,
-  type: WalletTransaction["type"],
-) {
-  return (transactions ?? []).filter(
-    (transaction) => transaction.type === type && transaction.status === "pending",
-  );
-}
-
 export async function getAdminPlatformStats(): Promise<AdminPlatformStats> {
-  const usersCollection = await getUsersCollection();
-  const users = await usersCollection
-    .find(
-      {},
-      {
-        projection: {
-          balanceCents: 1,
-          role: 1,
-          totalCommissionCents: 1,
-          totalDepositedCents: 1,
-          totalReferralBonusCents: 1,
-          totalWithdrawnCents: 1,
-          transactions: 1,
-        },
-      },
-    )
-    .toArray();
-
-  const todayKey = getTodayKey();
-
-  let totalUsersCount = 0;
-  let totalAdminsCount = 0;
-  let totalDepositedCents = 0;
-  let totalWithdrawnCents = 0;
-  let totalBalanceCents = 0;
-  let totalCommissionCents = 0;
-  let totalReferralBonusCents = 0;
-  let todayDepositedCents = 0;
-  let todayWithdrawnCents = 0;
-  let todayCommissionCents = 0;
-  let todayReferralBonusCents = 0;
-  let pendingDepositsCount = 0;
-  let pendingWithdrawalsCount = 0;
-  let pendingDepositsCents = 0;
-  let pendingWithdrawalsCents = 0;
-
-  for (const user of users) {
-    if (user.role === "admin") {
-      totalAdminsCount += 1;
-    } else {
-      totalUsersCount += 1;
-    }
-
-    totalDepositedCents += user.totalDepositedCents ?? 0;
-    totalWithdrawnCents += user.totalWithdrawnCents ?? 0;
-    totalBalanceCents += user.balanceCents ?? 0;
-    totalCommissionCents += user.totalCommissionCents ?? 0;
-    totalReferralBonusCents += user.totalReferralBonusCents ?? 0;
-
-    todayDepositedCents += sumTodayCompletedTransactions(
-      user.transactions,
-      "deposit",
-      todayKey,
-    );
-    todayWithdrawnCents += sumTodayCompletedTransactions(
-      user.transactions,
-      "withdrawal",
-      todayKey,
-    );
-    todayCommissionCents += sumTodayCompletedTransactions(
-      user.transactions,
-      "daily_commission",
-      todayKey,
-    );
-
-    for (const transaction of user.transactions ?? []) {
-      if (
-        transaction.status === "completed" &&
-        isReferralTeamTransaction(transaction.type) &&
-        getTransactionDayKey(transaction.createdAt) === todayKey
-      ) {
-        todayReferralBonusCents += transaction.amountCents;
-      }
-    }
-
-    const pendingDeposits = countPendingTransactions(user.transactions, "deposit");
-    const pendingWithdrawals = countPendingTransactions(
-      user.transactions,
-      "withdrawal",
-    );
-
-    pendingDepositsCount += pendingDeposits.length;
-    pendingWithdrawalsCount += pendingWithdrawals.length;
-    pendingDepositsCents += pendingDeposits.reduce(
-      (total, transaction) => total + transaction.amountCents,
-      0,
-    );
-    pendingWithdrawalsCents += pendingWithdrawals.reduce(
-      (total, transaction) => total + transaction.amountCents,
-      0,
-    );
-  }
+  const data = await backendGet("/admin/stats");
 
   return {
-    totalUsersCount,
-    totalAdminsCount,
-    totalDepositedCents,
-    totalWithdrawnCents,
-    totalBalanceCents,
-    totalCommissionCents,
-    totalReferralBonusCents,
-    todayDepositedCents,
-    todayWithdrawnCents,
-    todayCommissionCents,
-    todayReferralBonusCents,
-    pendingDepositsCount,
-    pendingWithdrawalsCount,
-    pendingDepositsCents,
-    pendingWithdrawalsCents,
+    totalUsersCount: Number(data.totalUsersCount) || 0,
+    totalAdminsCount: Number(data.totalAdminsCount) || 0,
+    totalDepositedCents: Math.round((Number(data.totalDeposited) || 0) * 100),
+    totalWithdrawnCents: Math.round((Number(data.totalWithdrawn) || 0) * 100),
+    totalBalanceCents: Math.round((Number(data.totalBalance) || 0) * 100),
+    totalCommissionCents: Math.round((Number(data.totalCommission) || 0) * 100),
+    totalReferralBonusCents: Math.round((Number(data.totalReferralBonus) || 0) * 100),
+    todayDepositedCents: Math.round((Number(data.todayDeposited) || 0) * 100),
+    todayWithdrawnCents: Math.round((Number(data.todayWithdrawn) || 0) * 100),
+    todayCommissionCents: Math.round((Number(data.todayCommission) || 0) * 100),
+    todayReferralBonusCents: Math.round((Number(data.todayReferralBonus) || 0) * 100),
+    pendingDepositsCount: Number(data.pendingDepositsCount) || 0,
+    pendingWithdrawalsCount: Number(data.pendingWithdrawalsCount) || 0,
+    pendingDepositsCents: Math.round((Number(data.pendingDepositsAmount) || 0) * 100),
+    pendingWithdrawalsCents: Math.round((Number(data.pendingWithdrawalsAmount) || 0) * 100),
   };
 }

@@ -52,7 +52,7 @@ export async function signupAction(formData: FormData) {
 
     const user: AuthenticatedUser = {
       id: data._id,
-      name: data.fullName,
+      name: data.fullName ?? data.name ?? "",
       email: data.email,
       referralCode: data.referralCode,
       role: data.role,
@@ -91,7 +91,7 @@ export async function loginAction(formData: FormData) {
 
     const user: AuthenticatedUser = {
       id: data._id,
-      name: data.fullName,
+      name: data.fullName ?? data.name ?? "",
       email: data.email,
       referralCode: data.referralCode,
       role: data.role,
