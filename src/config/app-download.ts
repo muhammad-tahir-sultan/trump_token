@@ -1,2 +1,2 @@
 export const APP_DOWNLOAD_URL =
-  "https://drive.usercontent.google.com/download?id=1zkj9emwV2FL8w8wLfFM0kNpCxj4_V5qb&export=download&authuser=0";
+  "https://drive.usercontent.google.com/download?id=183vtGG181NcgFPwkB-7bgekDPYgwv0S9&export=download&authuser=0";
