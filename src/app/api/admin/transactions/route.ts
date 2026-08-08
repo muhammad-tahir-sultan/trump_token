@@ -1,10 +1,24 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/features/auth/services/session-service";
-import {
-  getAllTransactions,
-  approveTransaction,
-  rejectTransaction,
-} from "@/features/wallet/services/wallet-store";
+import { backendGet, backendPatch } from "@/features/auth/services/backend-api-client";
+
+function toAdminTransaction(tx: any) {
+  return {
+    id: tx._id,
+    userId: tx.user?._id ?? tx.user,
+    userName: tx.user?.fullName ?? tx.userName ?? "",
+    userEmail: tx.user?.email ?? tx.userEmail ?? "",
+    type: tx.type,
+    amountCents: Math.round((Number(tx.amount) || 0) * 100),
+    status: tx.status,
+    depositAddress: tx.walletAddress,
+    withdrawAddress: tx.walletAddress,
+    withdrawNetwork: tx.network,
+    screenshotUrl: tx.paymentScreenshotUrl,
+    adminRemark: tx.adminRemark,
+    createdAt: tx.createdAt,
+  };
+}
 
 export async function GET() {
   const user = await getCurrentUser();
@@ -13,8 +27,9 @@ export async function GET() {
   }
 
   try {
-    const txs = await getAllTransactions();
-    return NextResponse.json(txs);
+    const txs = await backendGet("/admin/transactions");
+    const transformed = (Array.isArray(txs) ? txs : []).map(toAdminTransaction);
+    return NextResponse.json(transformed);
   } catch (error: any) {
     return NextResponse.json(
       { error: error.message || "Failed to load transactions" },
@@ -39,13 +54,13 @@ export async function POST(request: Request) {
       );
     }
 
-    if (action === "approve") {
-      await approveTransaction(userId, transactionId);
-    } else if (action === "reject") {
-      await rejectTransaction(userId, transactionId, remark);
-    } else {
-      return NextResponse.json({ error: "Invalid action. Use approve or reject" }, { status: 400 });
-    }
+    const status = action === "approve" ? "approved" : "rejected";
+
+    await backendPatch(`/admin/transactions/${transactionId}`, {
+      status,
+      userId,
+      remark: remark || (action === "reject" ? "Rejected by admin" : ""),
+    });
 
     return NextResponse.json({ success: true });
   } catch (error: any) {
