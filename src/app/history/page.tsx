@@ -2,9 +2,9 @@ import { redirect } from "next/navigation";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { getCurrentUser } from "@/features/auth/services/session-service";
 import { ReferralHistory } from "@/features/team/components/referral-history";
-import { getTeamSummary } from "@/features/team/services/team-store";
+import { getWalletSummary, getTransactionHistory } from "@/features/wallet/services/wallet-api";
+import { getTeamSummary } from "@/features/team/services/team-api";
 import { TransactionHistory } from "@/features/wallet/components/transaction-history";
-import { getWalletSummary } from "@/features/wallet/services/wallet-store";
 
 export default async function HistoryPage() {
   const user = await getCurrentUser();

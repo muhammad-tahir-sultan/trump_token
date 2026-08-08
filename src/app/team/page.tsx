@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { getCurrentUser } from "@/features/auth/services/session-service";
 import { TeamOverview } from "@/features/team/components/team-overview";
-import { getTeamSummary } from "@/features/team/services/team-store";
+import { getTeamSummary } from "@/features/team/services/team-api";
 
 export default async function TeamPage() {
   const user = await getCurrentUser();

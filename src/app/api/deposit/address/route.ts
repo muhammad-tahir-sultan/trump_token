@@ -1,20 +1,24 @@
 import { NextResponse } from "next/server";
-import { getCurrentUser } from "@/features/auth/services/session-service";
-import { getGlobalDepositAddress } from "@/features/wallet/services/wallet-store";
+import { getSessionToken } from "@/features/auth/services/session-service";
+
+const BACKEND_API_URL = process.env.BACKEND_API_URL ?? "http://localhost:5000/api";
 
 export async function GET() {
-  const user = await getCurrentUser();
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const token = await getSessionToken();
 
-  try {
-    const addressInfo = await getGlobalDepositAddress();
-    return NextResponse.json(addressInfo);
-  } catch (error: any) {
+  const res = await fetch(`${BACKEND_API_URL}/deposit/address`, {
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    cache: "no-store",
+  });
+
+  if (!res.ok) {
     return NextResponse.json(
-      { error: error.message || "Failed to load deposit address" },
-      { status: 500 }
+      { error: "Failed to load deposit address" },
+      { status: res.status },
     );
   }
+
+  return NextResponse.json(await res.json());
 }

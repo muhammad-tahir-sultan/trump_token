@@ -2,11 +2,8 @@ import { redirect } from "next/navigation";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { DashboardContent } from "@/features/dashboard/components/dashboard-content";
 import { getCurrentUser } from "@/features/auth/services/session-service";
-import { getTodayTeamCommissionCents } from "@/features/commission/services/referral-commission-service";
-import {
-  getReferralCommissionStatus,
-  getWalletSummary,
-} from "@/features/wallet/services/wallet-store";
+import { backendGet } from "@/features/auth/services/backend-api-client";
+import { getTodayKey } from "@/features/commission/services/commission-service";
 
 export default async function Home() {
   const user = await getCurrentUser();
@@ -15,19 +12,21 @@ export default async function Home() {
     redirect("/login");
   }
 
-  const [wallet, referralPreview] = await Promise.all([
-    getWalletSummary(user.id),
-    getReferralCommissionStatus(user.id),
+  const [dashboard, team] = await Promise.all([
+    backendGet("/dashboard"),
+    backendGet("/team"),
   ]);
-  const todayTeamCommissionCents = getTodayTeamCommissionCents(wallet.transactions);
+
+  const todayKey = getTodayKey();
+  const todayTeamCommissionCents = (team?.todayTeamCommissionCents ?? 0);
 
   return (
     <DashboardShell>
       <DashboardContent
-        referralPreview={referralPreview}
+        referralPreview={team?.referralPreview ?? null}
         todayTeamCommissionCents={todayTeamCommissionCents}
         user={user}
-        wallet={wallet}
+        wallet={dashboard?.wallet ?? {}}
       />
     </DashboardShell>
   );

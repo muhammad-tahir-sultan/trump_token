@@ -6,9 +6,9 @@ import { getCurrentUser } from "@/features/auth/services/session-service";
 import { getAmountCents } from "@/features/wallet/services/wallet-validation";
 import {
   depositToWallet,
-  InsufficientBalanceError,
   withdrawFromWallet,
-} from "@/features/wallet/services/wallet-store";
+} from "@/features/wallet/services/wallet-api";
+import { InsufficientBalanceError } from "@/features/wallet/services/wallet-store";
 
 type WalletActionPath = "/deposit" | "/withdraw";
 

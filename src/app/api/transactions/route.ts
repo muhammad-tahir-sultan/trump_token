@@ -1,13 +1,36 @@
 import { NextResponse } from "next/server";
-import { getCurrentUser } from "@/features/auth/services/session-service";
-import {
-  depositToWallet,
-  withdrawFromWallet,
-  updateTransactionScreenshot,
-} from "@/features/wallet/services/wallet-store";
+import { getCurrentUser, getSessionToken } from "@/features/auth/services/session-service";
+import { depositToWallet, withdrawFromWallet } from "@/features/wallet/services/wallet-api";
 import { isValidTrc20Address } from "@/features/wallet/services/wallet-validation";
 
-const TRC20_NETWORK = "TRON (TRC-20)";
+const BACKEND_API_URL = process.env.BACKEND_API_URL ?? "http://localhost:5000/api";
+
+async function backendRequest(path: string, options: RequestInit = {}) {
+  const token = await getSessionToken();
+  const res = await fetch(`${BACKEND_API_URL}${path}`, {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...(options.headers ?? {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    cache: "no-store",
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    let message = text || `Request failed with status ${res.status}`;
+    try {
+      const data = JSON.parse(text);
+      message = data.message ?? message;
+    } catch {
+      // keep plain text message
+    }
+    return NextResponse.json({ error: message }, { status: res.status });
+  }
+
+  return NextResponse.json(await res.json());
+}
 
 export async function POST(request: Request) {
   const user = await getCurrentUser();
@@ -32,7 +55,10 @@ export async function POST(request: Request) {
       const transactionId = await depositToWallet(user.id, amountCents, depositAddress);
 
       if (screenshotUrl && transactionId) {
-        await updateTransactionScreenshot(user.id, transactionId, screenshotUrl);
+        const uploadRes = await backendRequest("/upload/payment-screenshot", {
+          method: "POST",
+          body: JSON.stringify({ transactionId, screenshotUrl }),
+        });
       }
 
       return NextResponse.json({ success: true, transactionId });
@@ -57,7 +83,7 @@ export async function POST(request: Request) {
         user.id,
         amountCents,
         withdrawAddress.trim(),
-        TRC20_NETWORK,
+        "TRON (TRC-20)",
       );
 
       return NextResponse.json({ success: true, transactionId });
@@ -71,3 +97,4 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: message }, { status: 400 });
   }
 }
+

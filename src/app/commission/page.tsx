@@ -6,7 +6,7 @@ import { getCommissionPreview } from "@/features/commission/services/commission-
 import {
   getReferralCommissionStatus,
   getWalletSummary,
-} from "@/features/wallet/services/wallet-store";
+} from "@/features/wallet/services/wallet-api";
 
 type CommissionPageProps = {
   searchParams: Promise<{

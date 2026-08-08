@@ -5,15 +5,17 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/features/auth/services/session-service";
 import { getCommissionPreview } from "@/features/commission/services/commission-service";
 import {
+  claimDailyCommission,
+  claimDailyReferralCommission,
+  getReferralCommissionStatus,
+  getWalletSummary,
+} from "@/features/wallet/services/wallet-api";
+import {
   CommissionAlreadyClaimedError,
   CommissionLockedError,
   CommissionNotAvailableError,
   ReferralCommissionAlreadyClaimedError,
   ReferralCommissionNotAvailableError,
-  claimDailyCommission,
-  claimDailyReferralCommission,
-  getReferralCommissionStatus,
-  getWalletSummary,
 } from "@/features/wallet/services/wallet-store";
 
 function getFeedbackPath(

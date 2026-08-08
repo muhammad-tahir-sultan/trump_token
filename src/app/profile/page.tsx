@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { getCurrentUser } from "@/features/auth/services/session-service";
 import { ProfileSummary } from "@/features/wallet/components/profile-summary";
-import { getWalletSummary } from "@/features/wallet/services/wallet-store";
+import { getWalletSummary } from "@/features/wallet/services/wallet-api";
 
 export default async function ProfilePage() {
   const user = await getCurrentUser();

@@ -1,28 +1,36 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import {
   getLoginInput,
   getSignupInput,
   validateLoginInput,
   validateSignupInput,
 } from "@/features/auth/services/auth-validation";
-import { verifyPassword } from "@/features/auth/services/password-service";
-import {
-  createSession,
-  destroySession,
-} from "@/features/auth/services/session-service";
-import type { StoredUser } from "@/features/auth/types/auth";
-import {
-  createUser,
-  DuplicateUserEmailError,
-  findUserByEmail,
-  InvalidReferralCodeError,
-} from "@/features/auth/services/user-store";
+import type { AuthenticatedUser } from "@/features/auth/types/auth";
+
+const BACKEND_API_URL = process.env.BACKEND_API_URL ?? "http://localhost:5000/api";
+
+async function postJson(path: string, body: unknown) {
+  const res = await fetch(`${BACKEND_API_URL}${path}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+    cache: "no-store",
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    throw new Error(data.message ?? "Request failed");
+  }
+
+  return data;
+}
 
 function getErrorPath(path: "/login" | "/signup", message: string) {
   const params = new URLSearchParams({ error: message });
-
   return `${path}?${params.toString()}`;
 }
 
@@ -34,37 +42,37 @@ export async function signupAction(formData: FormData) {
     redirect(getErrorPath("/signup", validationError));
   }
 
-  const existingUser = await findUserByEmail(input.email);
-
-  if (existingUser) {
-    redirect(getErrorPath("/signup", "An account already exists for this email."));
-  }
-
-  let user: StoredUser;
-
   try {
-    user = await createUser(input);
+    const data = await postJson("/signup", {
+      fullName: input.name,
+      email: input.email,
+      password: input.password,
+      referralCode: input.referralCode || undefined,
+    });
+
+    const user: AuthenticatedUser = {
+      id: data._id,
+      name: data.fullName,
+      email: data.email,
+      referralCode: data.referralCode,
+      role: data.role,
+    };
+
+    const session = JSON.stringify({ user, token: data.token });
+
+    const cookieStore = await cookies();
+    cookieStore.set("level_dashboard_session", session, {
+      httpOnly: true,
+      maxAge: 60 * 60 * 24 * 7,
+      path: "/",
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+    });
+
+    redirect("/");
   } catch (error) {
-    if (error instanceof DuplicateUserEmailError) {
-      redirect(getErrorPath("/signup", error.message));
-    }
-
-    if (error instanceof InvalidReferralCodeError) {
-      redirect(getErrorPath("/signup", error.message));
-    }
-
-    throw error;
+    redirect(getErrorPath("/signup", error instanceof Error ? error.message : "Unable to create account."));
   }
-
-  await createSession({
-    id: user.id,
-    name: user.name,
-    email: user.email,
-    referralCode: user.referralCode,
-    role: user.role,
-  });
-
-  redirect("/");
 }
 
 export async function loginAction(formData: FormData) {
@@ -75,27 +83,39 @@ export async function loginAction(formData: FormData) {
     redirect(getErrorPath("/login", validationError));
   }
 
-  const user = await findUserByEmail(input.email);
-  const isPasswordValid = user
-    ? verifyPassword(input.password, user.passwordHash)
-    : false;
+  try {
+    const data = await postJson("/login", {
+      email: input.email,
+      password: input.password,
+    });
 
-  if (!user || !isPasswordValid) {
-    redirect(getErrorPath("/login", "Invalid email or password."));
+    const user: AuthenticatedUser = {
+      id: data._id,
+      name: data.fullName,
+      email: data.email,
+      referralCode: data.referralCode,
+      role: data.role,
+    };
+
+    const session = JSON.stringify({ user, token: data.token });
+
+    const cookieStore = await cookies();
+    cookieStore.set("level_dashboard_session", session, {
+      httpOnly: true,
+      maxAge: 60 * 60 * 24 * 7,
+      path: "/",
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+    });
+
+    redirect("/");
+  } catch (error) {
+    redirect(getErrorPath("/login", error instanceof Error ? error.message : "Invalid email or password."));
   }
-
-  await createSession({
-    id: user.id,
-    name: user.name,
-    email: user.email,
-    referralCode: user.referralCode,
-    role: user.role,
-  });
-
-  redirect("/");
 }
 
 export async function logoutAction() {
-  await destroySession();
+  const cookieStore = await cookies();
+  cookieStore.delete("level_dashboard_session");
   redirect("/login");
 }

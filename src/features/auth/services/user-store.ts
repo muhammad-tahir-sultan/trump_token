@@ -1,23 +1,30 @@
 import { randomBytes, randomUUID } from "crypto";
-import { MongoServerError, type Collection } from "mongodb";
+import { MongoServerError, ObjectId, type Collection } from "mongodb";
 import type { SignupInput, StoredUser } from "@/features/auth/types/auth";
 import { getMongoDatabase } from "@/features/auth/services/mongodb-client";
 import { hashPassword } from "@/features/auth/services/password-service";
 
 type UserDocument = {
-  id: string;
-  name: string;
+  id?: string;
+  _id?: ObjectId;
+  name?: string;
+  fullName?: string;
   email: string;
   passwordHash: string;
   referralCode: string;
-  referredByUserId: string | null;
+  referredByUserId?: string;
+  referredBy?: string;
   role: "admin" | "user";
   balanceCents?: number;
+  balance?: number;
   lastCommissionClaimedDate?: string | null;
   totalCommissionCents?: number;
   totalDepositedCents?: number;
+  totalDeposited?: number;
   totalReferralBonusCents?: number;
+  referralBonus?: number;
   totalWithdrawnCents?: number;
+  totalWithdrawn?: number;
   transactions?: unknown[];
   createdAt: Date;
   updatedAt: Date;
@@ -57,12 +64,12 @@ async function getUsersCollection() {
 
 function toStoredUser(document: UserDocument): StoredUser {
   return {
-    id: document.id,
-    name: document.name,
+    id: document._id?.toString() ?? document.id ?? "",
+    name: document.fullName ?? document.name ?? "",
     email: document.email,
     passwordHash: document.passwordHash,
     referralCode: document.referralCode,
-    referredByUserId: document.referredByUserId,
+    referredByUserId: document.referredByUserId ?? document.referredBy ?? null,
     role: document.role,
   };
 }
@@ -88,7 +95,16 @@ export async function findUserByEmail(email: string) {
 
 export async function findUserById(id: string) {
   const usersCollection = await getUsersCollection();
-  const user = await usersCollection.findOne({ id });
+
+  let user = await usersCollection.findOne({ id });
+
+  if (!user) {
+    try {
+      user = await usersCollection.findOne({ _id: new ObjectId(id) });
+    } catch {
+      // Not a valid ObjectId, ignore
+    }
+  }
 
   return user ? toStoredUser(user) : null;
 }

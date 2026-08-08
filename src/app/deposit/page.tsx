@@ -4,7 +4,7 @@ import { getCurrentUser } from "@/features/auth/services/session-service";
 import { LevelDetailHero } from "@/features/levels/components/level-detail-hero";
 import { getLevelById } from "@/features/levels/services/level-service";
 import { DepositForm } from "@/features/wallet/components/deposit-form";
-import { getWalletSummary } from "@/features/wallet/services/wallet-store";
+import { getWalletSummary } from "@/features/wallet/services/wallet-api";
 
 type DepositPageProps = {
   searchParams: Promise<{
