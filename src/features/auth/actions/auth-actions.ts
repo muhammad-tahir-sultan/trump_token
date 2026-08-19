@@ -20,13 +20,19 @@ async function postJson(path: string, body: unknown) {
     cache: "no-store",
   });
 
-  const data = await res.json();
-
   if (!res.ok) {
-    throw new Error(data.message ?? "Request failed");
+    const text = await res.text();
+    let message = text || `Request failed with status ${res.status}`;
+    try {
+      const data = JSON.parse(text);
+      message = data.message ?? message;
+    } catch {
+      // keep plain text message
+    }
+    throw new Error(message);
   }
 
-  return data;
+  return res.json();
 }
 
 function getErrorPath(path: "/login" | "/signup", message: string) {
