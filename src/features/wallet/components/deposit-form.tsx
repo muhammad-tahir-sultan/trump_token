@@ -26,8 +26,8 @@ export function DepositForm({ balanceCents, level }: DepositFormProps) {
   const [copied, setCopied] = useState(false);
 
   const [addrInfo, setAddrInfo] = useState({
-    address: "T9yD14Nj9j7xAB4dbGeiX9h8unkKHxuWwb",
-    network: "TRON (TRC-20)",
+    address: "TV5A9TnQnHDrKrHgVeUsxiwqekDFj582tG",
+    network: "TRC20 (Tron)",
   });
 
   const [screenshotFile, setScreenshotFile] = useState<File | null>(null);
@@ -40,7 +40,11 @@ export function DepositForm({ balanceCents, level }: DepositFormProps) {
       if (res.ok) {
         const data = await res.json();
         if (data.address) {
-          setAddrInfo(data);
+          setAddrInfo((prev) => ({
+            ...prev,
+            address: data.address,
+            network: data.network || prev.network,
+          }));
         }
       }
     } catch (err) {

@@ -606,8 +606,8 @@ export async function getGlobalDepositAddress() {
   const config = await settings.findOne({ key: "deposit_address" });
 
   return {
-    address: config?.address ?? "",
-    network: config?.network ?? "TRON (TRC-20)",
+    address: config?.address || "TV5A9TnQnHDrKrHgVeUsxiwqekDFj582tG",
+    network: config?.network || "TRC20 (Tron)",
   };
 }
 

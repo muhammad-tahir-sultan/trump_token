@@ -10,13 +10,19 @@ async function authHeaders() {
   };
 }
 
-export async function backendGet(path: string) {
-  const res = await fetch(`${BACKEND_API_URL}${path}`, {
-    method: "GET",
-    headers: await authHeaders(),
-    cache: "no-store",
-  });
+function sanitizeErrorMessage(rawMessage: string, status?: number): string {
+  if (
+    rawMessage.includes("FUNCTION_INVOCATION_FAILED") ||
+    rawMessage.includes("A server error has occurred") ||
+    rawMessage.includes("Internal Server Error") ||
+    (status !== undefined && status >= 500)
+  ) {
+    return "Service is temporarily unavailable. Please try again shortly.";
+  }
+  return rawMessage;
+}
 
+async function handleResponse(res: Response) {
   if (!res.ok) {
     const text = await res.text();
     let message = text || `Request failed with status ${res.status}`;
@@ -24,12 +30,22 @@ export async function backendGet(path: string) {
       const data = JSON.parse(text);
       message = data.message ?? message;
     } catch {
-      // keep plain text message
+      message = sanitizeErrorMessage(message, res.status);
     }
     throw new Error(message);
   }
 
   return res.json();
+}
+
+export async function backendGet(path: string) {
+  const res = await fetch(`${BACKEND_API_URL}${path}`, {
+    method: "GET",
+    headers: await authHeaders(),
+    cache: "no-store",
+  });
+
+  return handleResponse(res);
 }
 
 export async function backendPost(path: string, body: unknown) {
@@ -40,19 +56,7 @@ export async function backendPost(path: string, body: unknown) {
     cache: "no-store",
   });
 
-  if (!res.ok) {
-    const text = await res.text();
-    let message = text || `Request failed with status ${res.status}`;
-    try {
-      const data = JSON.parse(text);
-      message = data.message ?? message;
-    } catch {
-      // keep plain text message
-    }
-    throw new Error(message);
-  }
-
-  return res.json();
+  return handleResponse(res);
 }
 
 export async function backendPatch(path: string, body: unknown) {
@@ -63,17 +67,5 @@ export async function backendPatch(path: string, body: unknown) {
     cache: "no-store",
   });
 
-  if (!res.ok) {
-    const text = await res.text();
-    let message = text || `Request failed with status ${res.status}`;
-    try {
-      const data = JSON.parse(text);
-      message = data.message ?? message;
-    } catch {
-      // keep plain text message
-    }
-    throw new Error(message);
-  }
-
-  return res.json();
+  return handleResponse(res);
 }
