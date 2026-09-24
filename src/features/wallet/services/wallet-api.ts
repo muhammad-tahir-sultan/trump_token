@@ -8,24 +8,51 @@ export class InsufficientBalanceError extends Error {
   }
 }
 
-export async function getWalletSummary(_userId?: string): Promise<WalletSummary> {
-  const data = await backendGet("/users/dashboard");
+export async function getWalletSummary(userId?: string): Promise<WalletSummary> {
+  try {
+    const data = await backendGet("/users/dashboard");
 
-  const availableBalance = Number(data?.wallet?.availableBalance) || 0;
-  const totalDeposited = Number(data?.wallet?.totalDeposited) || 0;
-  const totalWithdrawn = Number(data?.wallet?.totalWithdrawn) || 0;
-  const todayDailyCommission = Number(data?.wallet?.todayDailyCommission) || 0;
-  const totalTeamCommission = Number(data?.wallet?.totalTeamCommission) || 0;
+    const availableBalance = Number(data?.wallet?.availableBalance);
+    const totalDeposited = Number(data?.wallet?.totalDeposited);
+    const totalWithdrawn = Number(data?.wallet?.totalWithdrawn);
+    const todayDailyCommission = Number(data?.wallet?.todayDailyCommission);
+    const totalTeamCommission = Number(data?.wallet?.totalTeamCommission);
+
+    if (Number.isFinite(availableBalance)) {
+      return {
+        balanceCents: Math.round(availableBalance * 100),
+        commissionUnlockAt: null,
+        lastCommissionClaimedDate: null,
+        lastReferralCommissionClaimedDate: null,
+        totalCommissionCents: Math.round((Number.isFinite(todayDailyCommission) ? todayDailyCommission : 0) * 100),
+        totalDepositedCents: Math.round((Number.isFinite(totalDeposited) ? totalDeposited : 0) * 100),
+        totalReferralBonusCents: Math.round((Number.isFinite(totalTeamCommission) ? totalTeamCommission : 0) * 100),
+        totalWithdrawnCents: Math.round((Number.isFinite(totalWithdrawn) ? totalWithdrawn : 0) * 100),
+        transactions: [],
+      };
+    }
+  } catch (err) {
+    console.warn("Backend /users/dashboard error, falling back to database wallet store:", err);
+  }
+
+  if (userId) {
+    try {
+      const { getWalletSummary: getWalletSummaryFromStore } = await import("./wallet-store");
+      return await getWalletSummaryFromStore(userId);
+    } catch (dbErr) {
+      console.error("Database fallback wallet store also failed:", dbErr);
+    }
+  }
 
   return {
-    balanceCents: Math.round(availableBalance * 100),
+    balanceCents: 0,
     commissionUnlockAt: null,
     lastCommissionClaimedDate: null,
     lastReferralCommissionClaimedDate: null,
-    totalCommissionCents: Math.round(todayDailyCommission * 100),
-    totalDepositedCents: Math.round(totalDeposited * 100),
-    totalReferralBonusCents: Math.round(totalTeamCommission * 100),
-    totalWithdrawnCents: Math.round(totalWithdrawn * 100),
+    totalCommissionCents: 0,
+    totalDepositedCents: 0,
+    totalReferralBonusCents: 0,
+    totalWithdrawnCents: 0,
     transactions: [],
   };
 }

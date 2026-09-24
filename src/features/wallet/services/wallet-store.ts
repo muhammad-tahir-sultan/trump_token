@@ -1,5 +1,5 @@
 import { randomUUID } from "crypto";
-import type { Collection, Document } from "mongodb";
+import { ObjectId, type Collection, type Document } from "mongodb";
 import { getMongoDatabase } from "@/features/auth/services/mongodb-client";
 import {
   getCommissionPreview,
@@ -122,20 +122,32 @@ function toWalletSummary(document: WalletUserDocument | null): WalletSummary {
   }
 
   const transactions = document.transactions ?? [];
+
+  const rawBalance = (document as any).balance ?? (document.balanceCents !== undefined ? document.balanceCents / 100 : 0);
+  const balanceCents = document.balanceCents ?? Math.round(Number(rawBalance || 0) * 100);
+
+  const rawDeposited = (document as any).totalDeposited;
   const totalDepositedCents =
     document.totalDepositedCents ??
-    transactions
-      .filter((transaction) => transaction.type === "deposit")
-      .reduce((total, transaction) => total + transaction.amountCents, 0);
+    (typeof rawDeposited === "number"
+      ? Math.round(rawDeposited * 100)
+      : transactions
+          .filter((transaction) => transaction.type === "deposit")
+          .reduce((total, transaction) => total + transaction.amountCents, 0));
+
+  const rawWithdrawn = (document as any).totalWithdrawn;
   const totalWithdrawnCents =
     document.totalWithdrawnCents ??
-    transactions
-      .filter(
-        (transaction) =>
-          transaction.type === "withdrawal" &&
-          transaction.status === "completed",
-      )
-      .reduce((total, transaction) => total + transaction.amountCents, 0);
+    (typeof rawWithdrawn === "number"
+      ? Math.round(rawWithdrawn * 100)
+      : transactions
+          .filter(
+            (transaction) =>
+              transaction.type === "withdrawal" &&
+              transaction.status === "completed",
+          )
+          .reduce((total, transaction) => total + transaction.amountCents, 0));
+
   const totalReferralBonusCents =
     document.totalReferralBonusCents ??
     transactions
@@ -153,7 +165,7 @@ function toWalletSummary(document: WalletUserDocument | null): WalletSummary {
       .reduce((total, transaction) => total + transaction.amountCents, 0);
 
   return {
-    balanceCents: document.balanceCents ?? 0,
+    balanceCents,
     commissionUnlockAt: document.commissionUnlockAt
       ? new Date(document.commissionUnlockAt).toISOString()
       : null,
@@ -259,7 +271,10 @@ function createWithdrawalUpdatePipeline(
 
 export async function getWalletSummary(userId: string) {
   const usersCollection = await getUsersCollection();
-  const user = await usersCollection.findOne({ id: userId });
+  const query = ObjectId.isValid(userId)
+    ? { $or: [{ _id: new ObjectId(userId) as any }, { id: userId }] }
+    : { id: userId };
+  const user = await usersCollection.findOne(query as any);
 
   return toWalletSummary(user);
 }

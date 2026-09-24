@@ -4,6 +4,9 @@ import { getCurrentUser } from "@/features/auth/services/session-service";
 import { WithdrawForm } from "@/features/wallet/components/withdraw-form";
 import { getWalletSummary } from "@/features/wallet/services/wallet-api";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export default async function WithdrawPage() {
   const user = await getCurrentUser();
 

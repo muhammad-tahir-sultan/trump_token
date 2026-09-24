@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { formatCurrency } from "@/features/wallet/services/currency";
 import type { WalletTransaction } from "@/features/wallet/types/wallet";
 
@@ -19,14 +19,40 @@ export function WithdrawForm({
   balanceCents,
   pendingWithdrawals = [],
 }: WithdrawFormProps) {
+  const [currentBalanceCents, setCurrentBalanceCents] = useState(balanceCents);
   const [amount, setAmount] = useState("");
   const [address, setAddress] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
+  useEffect(() => {
+    setCurrentBalanceCents(balanceCents);
+  }, [balanceCents]);
+
+  useEffect(() => {
+    let mounted = true;
+    async function loadBalance() {
+      try {
+        const res = await fetch("/api/wallet/balance");
+        if (res.ok) {
+          const data = await res.json();
+          if (mounted && typeof data.balanceCents === "number") {
+            setCurrentBalanceCents(data.balanceCents);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load live balance:", err);
+      }
+    }
+    loadBalance();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   const amountCents = Math.round(Number(amount) * 100);
-  const canWithdraw = balanceCents > 0;
+  const canWithdraw = currentBalanceCents > 0;
 
   const handleSubmitWithdraw = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,7 +65,7 @@ export function WithdrawForm({
       return;
     }
 
-    if (amountCents > balanceCents) {
+    if (amountCents > currentBalanceCents) {
       setError("You can only withdraw up to your available balance.");
       return;
     }
@@ -90,7 +116,7 @@ export function WithdrawForm({
   };
 
   const handleWithdrawMax = () => {
-    setAmount((balanceCents / 100).toFixed(2));
+    setAmount((currentBalanceCents / 100).toFixed(2));
   };
 
   return (
@@ -112,7 +138,7 @@ export function WithdrawForm({
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
             Available Balance
           </p>
-          <p className="mt-1 text-2xl font-black">{formatCurrency(balanceCents)}</p>
+          <p className="mt-1 text-2xl font-black">{formatCurrency(currentBalanceCents)}</p>
         </div>
       </div>
 
