@@ -93,7 +93,7 @@ export async function depositToWallet(_userId?: string, amountCents?: number, de
     paymentScreenshotUrl,
   });
 
-  return data.transactionId;
+  return data?.transactionId || data?._id || data?.id;
 }
 
 export async function withdrawFromWallet(_userId?: string, amountCents?: number, withdrawAddress?: string, network?: string) {
@@ -103,11 +103,12 @@ export async function withdrawFromWallet(_userId?: string, amountCents?: number,
 
   const data = await backendPost("/transactions/withdraw", {
     amount: amountCents / 100,
+    walletAddress: withdrawAddress,
     withdrawAddress,
     network,
   });
 
-  return data.transactionId;
+  return data?.transactionId || data?._id || data?.id;
 }
 
 export async function claimDailyCommission(_userId?: string) {
