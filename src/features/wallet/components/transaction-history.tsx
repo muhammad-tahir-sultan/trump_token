@@ -23,9 +23,12 @@ function getTransactionLabel(transaction: WalletTransaction) {
     case "referral_first_day_commission":
       return "Referral First-Day Commission";
     case "referral_daily_commission":
-      return "Referral Daily Commission";
+    case "referral_commission":
+      return "Referral Commission";
     case "withdrawal":
       return "Withdrawal";
+    default:
+      return "Transaction";
   }
 }
 
@@ -36,9 +39,12 @@ function getTransactionClassName(transaction: WalletTransaction) {
     case "referral_bonus":
     case "referral_first_day_commission":
     case "referral_daily_commission":
+    case "referral_commission":
       return "bg-emerald-50 text-emerald-700";
     case "withdrawal":
       return "bg-amber-50 text-amber-700";
+    default:
+      return "bg-slate-100 text-slate-700";
   }
 }
 
@@ -52,8 +58,28 @@ function getTransactionDetails(transaction: WalletTransaction) {
       : address;
   }
 
-  if (transaction.type === "referral_bonus" && transaction.sourceUserName) {
-    return `Bonus from ${transaction.sourceUserName}`;
+  if (transaction.type === "deposit") {
+    return transaction.depositAddress
+      ? `To ${transaction.depositAddress}`
+      : (transaction.description ?? "Deposit request");
+  }
+
+  if (
+    (transaction.type === "referral_bonus" ||
+      transaction.type === "referral_daily_commission" ||
+      transaction.type === "referral_commission" ||
+      transaction.type === "referral_first_day_commission") &&
+    transaction.sourceUserName
+  ) {
+    return `Commission from ${transaction.sourceUserName}`;
+  }
+
+  if (transaction.type === "daily_commission") {
+    return "Daily return on approved deposit";
+  }
+
+  if (transaction.type === "referral_commission" || transaction.type === "referral_daily_commission") {
+    return "Team referral commission";
   }
 
   return transaction.description ?? "Wallet transaction";
@@ -141,7 +167,9 @@ export function TransactionHistory({ transactions }: TransactionHistoryProps) {
                       {getTransactionDetails(transaction)}
                     </td>
                     <td className="py-4 pr-4 font-bold text-slate-700">
-                      {formatCurrency(transaction.balanceAfterCents)}
+                      {transaction.balanceAfterCents > 0
+                        ? formatCurrency(transaction.balanceAfterCents)
+                        : "—"}
                     </td>
                     <td className="py-4 pr-4 font-bold capitalize">
                       <span className={getStatusClassName(transaction)}>
