@@ -61,25 +61,75 @@ export async function getGlobalDepositAddress() {
   return backendGet("/transactions/deposit/address");
 }
 
-export async function getTransactionHistory(_userId?: string): Promise<WalletTransaction[]> {
-  const data = await backendGet("/transactions/history");
+export async function getTransactionHistory(userId?: string): Promise<WalletTransaction[]> {
+  try {
+    const data = await backendGet("/transactions/history");
 
-  return (data ?? []).map((tx: any) => ({
-    id: tx._id,
-    type: tx.type as WalletTransactionType,
-    amountCents: Math.round((tx.amount ?? 0) * 100),
-    status: tx.status as WalletTransactionStatus,
-    balanceAfterCents: 0,
-    createdAt: new Date(tx.createdAt),
-    description: tx.description,
-    sourceUserId: tx.sourceUserId,
-    sourceUserName: tx.sourceUserName,
-    depositAddress: tx.depositAddress,
-    withdrawAddress: tx.walletAddress,
-    withdrawNetwork: tx.network,
-    screenshotUrl: tx.paymentScreenshotUrl,
-    adminRemark: tx.adminRemark,
-  }));
+    if (Array.isArray(data)) {
+      return data.map((tx: any) => ({
+        id: tx._id?.toString() || tx.id,
+        type: tx.type as WalletTransactionType,
+        amountCents: Math.round((Number(tx.amount) || 0) * 100),
+        status: (tx.status === "approved" ? "completed" : tx.status) as WalletTransactionStatus,
+        balanceAfterCents: Math.round((Number(tx.balanceAfter) || 0) * 100),
+        createdAt: tx.createdAt ? new Date(tx.createdAt) : new Date(),
+        description: tx.description,
+        sourceUserId: tx.sourceUserId,
+        sourceUserName: tx.sourceUserName,
+        depositAddress: tx.depositAddress,
+        withdrawAddress: tx.walletAddress || tx.withdrawAddress,
+        withdrawNetwork: tx.network || tx.withdrawNetwork,
+        screenshotUrl: tx.paymentScreenshotUrl || tx.screenshotUrl,
+        adminRemark: tx.adminRemark,
+      }));
+    }
+  } catch (err) {
+    console.warn("Backend /transactions/history error, falling back to database wallet store:", err);
+  }
+
+  if (userId) {
+    try {
+      const { getMongoDatabase } = await import("@/features/auth/services/mongodb-client");
+      const db = await getMongoDatabase();
+      const { ObjectId } = await import("mongodb");
+      const userQuery = ObjectId.isValid(userId)
+        ? { $or: [{ user: new ObjectId(userId) as any }, { user: userId }, { userId }] }
+        : { $or: [{ user: userId }, { userId }] };
+
+      const txDocs = await db
+        .collection("transactions")
+        .find(userQuery as any)
+        .sort({ createdAt: -1 })
+        .toArray();
+
+      if (txDocs && txDocs.length > 0) {
+        return txDocs.map((tx: any) => ({
+          id: tx._id?.toString() || tx.id,
+          type: tx.type as WalletTransactionType,
+          amountCents: Math.round((Number(tx.amount) || 0) * 100),
+          status: (tx.status === "approved" ? "completed" : tx.status) as WalletTransactionStatus,
+          balanceAfterCents: Math.round((Number(tx.balanceAfter) || 0) * 100),
+          createdAt: tx.createdAt ? new Date(tx.createdAt) : new Date(),
+          description: tx.description,
+          sourceUserId: tx.sourceUserId,
+          sourceUserName: tx.sourceUserName,
+          depositAddress: tx.depositAddress,
+          withdrawAddress: tx.walletAddress || tx.withdrawAddress,
+          withdrawNetwork: tx.network || tx.withdrawNetwork,
+          screenshotUrl: tx.paymentScreenshotUrl || tx.screenshotUrl,
+          adminRemark: tx.adminRemark,
+        }));
+      }
+
+      const { getWalletSummary: getWalletSummaryFromStore } = await import("./wallet-store");
+      const summary = await getWalletSummaryFromStore(userId);
+      return summary.transactions ?? [];
+    } catch (dbErr) {
+      console.error("Database fallback wallet store also failed:", dbErr);
+    }
+  }
+
+  return [];
 }
 
 export async function depositToWallet(_userId?: string, amountCents?: number, depositAddress?: string, paymentScreenshotUrl?: string) {

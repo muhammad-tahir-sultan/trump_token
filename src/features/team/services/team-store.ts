@@ -37,36 +37,61 @@ async function getUsersCollection() {
   return usersCollectionPromise;
 }
 
-function toTeamMember(document: TeamUserDocument): TeamMember {
+function toTeamMember(document: any): TeamMember {
+  const balanceCents =
+    document.balanceCents ?? Math.round((Number(document.balance) || 0) * 100);
+  const totalDepositedCents =
+    document.totalDepositedCents ??
+    Math.round((Number(document.totalDeposited) || 0) * 100);
+  const totalWithdrawnCents =
+    document.totalWithdrawnCents ??
+    Math.round((Number(document.totalWithdrawn) || 0) * 100);
+
   return {
-    balanceCents: document.balanceCents ?? 0,
-    createdAt: document.createdAt,
-    email: document.email,
-    id: document.id,
-    name: document.name,
-    referralCode: document.referralCode,
-    totalDepositedCents: document.totalDepositedCents ?? 0,
-    totalWithdrawnCents: document.totalWithdrawnCents ?? 0,
+    balanceCents,
+    createdAt: document.createdAt ? new Date(document.createdAt) : new Date(),
+    email: document.email || "",
+    id: document._id?.toString() || document.id || "",
+    name: document.fullName || document.name || "Member",
+    referralCode: document.referralCode || "",
+    totalDepositedCents,
+    totalWithdrawnCents,
   };
 }
 
 export async function getTeamSummary(userId: string): Promise<TeamSummary> {
   const usersCollection = await getUsersCollection();
-  const [referrer, memberDocuments] = await Promise.all([
-    usersCollection.findOne(
-      { id: userId },
-      {
-        projection: {
-          totalReferralBonusCents: 1,
-          transactions: 1,
-        },
-      },
-    ),
-    usersCollection
-      .find({ referredByUserId: userId })
-      .sort({ createdAt: -1 })
-      .toArray(),
-  ]);
+  const { ObjectId } = await import("mongodb");
+  const userQuery = ObjectId.isValid(userId)
+    ? { $or: [{ _id: new ObjectId(userId) as any }, { id: userId }] }
+    : { id: userId };
+
+  const referrer = await usersCollection.findOne(userQuery as any, {
+    projection: {
+      referralCode: 1,
+      totalReferralBonusCents: 1,
+      transactions: 1,
+    },
+  });
+
+  const referralCode = (referrer as any)?.referralCode;
+  const memberQuery: any = {
+    $or: [
+      { referredByUserId: userId },
+      ...(referralCode
+        ? [
+            { referredBy: referralCode },
+            { referredBy: { $regex: new RegExp(`^${referralCode}$`, "i") } },
+          ]
+        : []),
+      { referredBy: userId },
+    ],
+  };
+
+  const memberDocuments = await usersCollection
+    .find(memberQuery)
+    .sort({ createdAt: -1 })
+    .toArray();
 
   const members = memberDocuments.map(toTeamMember);
 

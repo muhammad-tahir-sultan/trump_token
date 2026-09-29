@@ -4,9 +4,10 @@ export type WalletTransactionType =
   | "referral_bonus"
   | "referral_first_day_commission"
   | "referral_daily_commission"
+  | "referral_commission"
   | "withdrawal";
 
-export type WalletTransactionStatus = "completed" | "pending" | "rejected";
+export type WalletTransactionStatus = "completed" | "pending" | "rejected" | "approved";
 
 export type WalletTransaction = {
   id: string;
